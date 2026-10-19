@@ -1,0 +1,49 @@
+# Changelog
+
+## 1.1.0
+* **Compact *Add new download* window.** About half the height (two columns for file name / category and referer / description, a smaller URL box, user and password on the login line), so the buttons are always visible without scrolling.
+* **Starts with Windows by default, and no more "Still running" notification.** The first time the app runs it registers itself to start in the tray when you sign in (the installer's start-up option is now ticked by default; uninstalling removes it). Switch it off any time in *Options → General → Launch on Windows startup*; the choice is remembered. Closing the window to the tray no longer shows a notification.
+* **More native window.** *Add URL* now opens with the link you copied last already pasted; the native window reads the clipboard itself, so there is no browser permission popup. Questions and name prompts (delete queue, remove completed, new category / queue / template, PAC test) are now in-app dialogs instead of browser boxes; the window no longer offers the browser's right-click menu (only Cut / Copy / Paste), browser shortcuts (F5, Ctrl+P ...), zoom or permission popups.
+* **Right-click menu in the browser:** *Download with Advance Download Manager* on links, images, audio and video; new: on selected text that is a web address, and links to video pages (YouTube, TikTok, Facebook, Instagram, ...) are sent as videos so the quality dialog opens. Also *Download all links* and *Download video from this page* on the page itself.
+* **Click the "Download complete" notification to open the folder** with the finished file selected in Explorer. Also fixed the Open / Open with… / Open folder buttons of the in-app notice, whose text was white on white.
+* **Transfer rate units.** Speeds are shown in B/s below 1 KB, KB/s below 1 MB, MB/s below 1 GB and GB/s above (list, status line and tray tooltip).
+* **New extension design + show / hide the download button.** Redesigned toolbar popup (status pill, switches, media cards) and options page (light and dark), (the button over videos keeps its original blue look). The button can now be shown or hidden everywhere, or switched off for a single website (toolbar popup or Options). The button follows the video with a light timer instead of on every frame, so busy pages like YouTube are not slowed down.
+* **Default save folder is your Downloads folder.** All files land directly in `Downloads` (no `Advance Download Manager\<Category>` sub-folders). Categories still sort the list; folders that were the old defaults are moved to `Downloads` automatically, folders you chose yourself stay.
+* **YouTube downloads no longer starve the browser.** With Turbo on, a YouTube download used 12 connections and the video still loading in the browser tab stalled ("Experiencing interruptions?"). YouTube downloads now use 4 pieces at a time (6 in Turbo).
+* **YouTube without sign-in problems.** YouTube links are now read the way YoutubeExplode does it: straight from YouTube's player API (VisionOS client, visitor id from `sw.js_data`), which returns direct stream addresses with no login, cipher or bot check. The app downloads the video and audio streams itself in ranged pieces (several at once, resumable, speed limit respected) and joins them with the bundled FFmpeg (1080p H.264 + AAC as MP4). yt-dlp stays as the fallback and for all other sites.
+* **"This video could not be read" (YouTube "The page needs to be reloaded", TikTok).** When a site rejects the first way of asking, the app now tries the next ones automatically: another YouTube client (web_safari/mweb, android_vr), without the saved login (a rotated login is the usual cause), and for other sites with a browser fingerprint (`--impersonate chrome`, needed by TikTok). The way that worked is also used for the download.
+* **Video tools included.** yt-dlp and FFmpeg now ship inside the installer and the portable zip: no separate setup for video downloads. Updates of yt-dlp are kept in your user folder and take priority.
+* **YouTube HTTP 429 / bot check.** For YouTube the app no longer passes the browser's User-Agent to yt-dlp (YouTube answers a mismatching client with 429), retries slowly with growing pauses, spaces its requests and uses 4 parallel parts. New: *Options → Video → Use the login of this browser* (Firefox works; Chrome/Edge are often blocked by Windows encryption, the extension button passes the login itself). Clearer error messages for both cases.
+* **Self-tuning speed.** The number of connections is no longer a fixed number: the engine measures the speed and uses as many connections as actually help — more while the speed improves, fewer when more connections make it worse (many servers get slower or block you with too many), re-tested during long downloads and when the line speeds up or slows down. On a real test server: 1.0 MB/s → 3.7 MB/s against the old fixed settings; on mock servers 3–7× faster than a fixed count. Switch: *Options → Connection → Auto-tune* (Turbo uses the same tuner with a higher limit).
+* **Download videos from YouTube, Facebook, Instagram, TikTok and 1,000+ other sites.** A **Download this video** button appears over playing videos; it opens a **Download video** window with thumbnail, title, source, length and a list of qualities with sizes (best, 1080p … 360p, audio only, MP3), a folder and file name, **Download** / **Download Later**. Works from the popup, the right-click menu and *Tasks → Download video from a page address…* too. Uses yt-dlp and FFmpeg, installed on demand (checksum-verified) and updated automatically; *Options → Video*. Browser login cookies are passed for the video's site only. DRM-protected and live streams are not supported.
+* **Duplicate download link dialog** for every way of adding a link (browser, clipboard, capture, Add URL, batch): describes the existing entry (name, folder, status, size, date) and offers *numbered file name*, *overwrite* or *keep / resume the existing one*, with *do not ask again*.
+* Tests no longer write into your real Downloads folder (`ADM_DOWNLOAD_ROOT`).
+* **Download File Info confirmation.** Downloads captured from the browser, the clipboard or other programs no longer start silently: a window shows the URL, category (with +), Save As path (with a folder chooser), *Remember this path for the category*, description, file icon, size and type, and a ZIP **Preview**, with **Start Download**, **Download Later** and **Cancel**. Warnings for duplicates and existing files, several requests queue up, the app comes to the front. Switch in *Options → Downloads*.
+* **Browser integration:** the Chrome/Edge/Firefox extensions pair themselves with the app (one *Allow* click, no port/token copying, survives restarts); *Options → Browser* shows connected browsers, opens the extension folder and each browser's extensions page; the installer offers *Set up the browser extension* at the end. Store-ready extension packages, listing text and privacy policy are included.
+* **Catch downloads of other programs (Windows):** optional PC-wide capture of plain-HTTP downloads through a proxy script that falls back to a direct connection (safe if the app is closed or crashes) and restores your previous setting.
+* **Clipboard link offers** in the native app (a notification; nothing starts without a click).
+* The engine uses port 6810–6819 when 6800 is taken.
+* Extension version 1.1.0; new permission `alarms` (retry pairing).
+* **Faster by default:** 16 connections (was 8), a new connection burst every 0.5 s (was 2 s), segments split down to 64 KB (was 256 KB).
+* **⚡ Turbo mode:** toolbar button, *Downloads* menu, tray menu and *Options → Connection*. No speed limiter or quota pause, up to 64 connections opened at once, no ramp-up, automatic back-off when a server refuses connections.
+* Connection back-off for normal mode as well: if many parallel connections fail, the engine stops opening more than the server tolerates instead of failing the download.
+* **Native Windows window.** The app now opens in its own top-level window (title bar, taskbar button, icon, snap/maximize, per-monitor DPI,
+  remembered size and position) instead of a browser tab. The UI is shown through Microsoft WebView2.
+* Native notification-area icon with menu (Open / Start main queue / Stop all / Exit), live speed tooltip and completion balloons.
+  Closing the window keeps downloads running in the tray; *Exit* stops the engine too.
+* Single instance: launching again (or opening a `/d` link) brings the running window forward; `--minimized` starts in the tray; `--quit` exits.
+* Installer and portable zip now ship the native host (`AdvanceDownloadManager.exe`), the engine (`adm-engine.exe`) and the WebView2 libraries.
+* *Help → About* now shows the version number; *Options → General* has a switch for the daily update check.
+* Removed the "Tip of the Day" dialog (no pop-up at startup, no Help menu entry).
+* Engine files are unpacked to a folder named after a hash of their content, so a rebuilt app can never show stale UI files.
+* If the WebView2 Runtime is missing the app offers to open the page in the browser or download the runtime.
+
+## 1.0.0
+* First public release as **Advance Download Manager** (created by @kaushalsah606).
+* Segmented, resumable engine with tuned rules; HTTP/HTTPS (Basic/Digest/NTLMv2), FTP, HLS, DASH, RTMP.
+* Queues, scheduler, categories, Site Grabber, PAC/SOCKS/system proxy, dial-up, `.ief`/`.ef2` import/export.
+* Chrome/Edge and Firefox extensions, optional capture proxy, tray icon, app-style window.
+* Windows installer (Inno Setup) with in-place upgrades and clean uninstall; GitHub-release based update check with checksum verification.
+* Real-browser (Edge, Firefox), tray, installer and OS-command end-to-end tests.
+* Signatures carry an RFC 3161 timestamp.
+* Single-file Windows executable with Authenticode signing; MIT licence; licensing code removed.

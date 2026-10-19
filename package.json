@@ -1,0 +1,58 @@
+{
+  "name": "advance-download-manager",
+  "version": "1.1.0",
+  "description": "Advance Download Manager - open-source download manager: segmented/resumable HTTP(S), FTP, HLS, DASH, RTMP, queues, scheduler, site grabber, browser extensions, Windows desktop app",
+  "bin": {
+    "advance-download-manager": "bin/advance-download-manager.js"
+  },
+  "scripts": {
+    "start": "node bin/advance-download-manager.js",
+    "test": "node scripts/run-tests.js",
+    "test:ui": "node test-ui/ui.test.js",
+    "build:extensions": "node scripts/build-extensions.js",
+    "build:icon": "powershell -NoProfile -File scripts/make-icon.ps1",
+    "build:exe": "node scripts/build-exe.js",
+    "build:exe:unsigned": "node scripts/build-exe.js --no-sign",
+    "release": "node scripts/release.js",
+    "test:e2e": "node test-browser/edge-extension.e2e.js \"C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe\" && node test-browser/firefox-extension.e2e.js && node test-browser/native-window.e2e.js && node test-browser/system-capture.e2e.js && node test-browser/os-commands.e2e.js",
+    "build:host": "node scripts/build-host.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "jsdom": "^24.1.3",
+    "postject": "^1.0.0-alpha.6",
+    "rcedit": "^5.0.2"
+  },
+  "author": "@kaushalsah606",
+  "keywords": [
+    "download-manager",
+    "downloader",
+    "segmented-download",
+    "resume",
+    "hls",
+    "dash",
+    "windows"
+  ],
+  "files": [
+    "bin",
+    "src",
+    "public",
+    "extension",
+    "scripts",
+    "assets",
+    "LICENSE",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kaushalsah606/ADM---Advance-Download-Manager-.git"
+  },
+  "homepage": "https://github.com/kaushalsah606/ADM---Advance-Download-Manager-#readme",
+  "bugs": {
+    "url": "https://github.com/kaushalsah606/ADM---Advance-Download-Manager-/issues"
+  },
+  "private": true
+}

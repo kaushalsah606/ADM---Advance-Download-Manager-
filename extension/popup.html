@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Advance Download Manager</title>
+<link rel="stylesheet" href="ui.css">
+<style>
+  body { width: 380px; padding: 14px; }
+  .stack { display: grid; gap: 12px; }
+  .media-h { display: flex; align-items: center; padding: 10px 14px 4px; font-weight: 600; }
+  .media-h .n { margin-left: auto; color: var(--muted); font-weight: 500; font-size: 11.5px; }
+  .it { display: flex; align-items: center; gap: 10px; padding: 8px 14px; }
+  .it + .it { border-top: 1px solid var(--line); }
+  .it .f { flex: 1; min-width: 0; }
+  .it .f b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+  .it .f span { color: var(--muted); font-size: 11.5px; }
+  .empty { padding: 14px; color: var(--muted); text-align: center; }
+  .foot { display: flex; justify-content: space-between; color: var(--muted); font-size: 11.5px; padding: 0 2px; }
+</style>
+<body>
+<div class="stack">
+  <div class="head">
+    <img src="icons/icon48.png" alt="">
+    <div><div class="name">Advance Download Manager</div><div class="sub" id="ver"></div></div>
+    <span class="pill" id="st">Checking…</span>
+  </div>
+
+  <div class="card">
+    <div class="row"><div class="t"><b>Take over downloads</b><span>Send the browser's file downloads to the app</span></div>
+      <label class="sw"><input type="checkbox" id="on"><i></i></label></div>
+    <div class="row"><div class="t"><b>Download button on videos</b><span>The "Download this video" button over playing videos</span></div>
+      <label class="sw"><input type="checkbox" id="vb"><i></i></label></div>
+    <div class="row" id="siteRow"><div class="t"><b id="siteT">Show on this site</b><span>Turn the button off only for this website</span></div>
+      <label class="sw"><input type="checkbox" id="site"><i></i></label></div>
+  </div>
+
+  <div class="stack" style="gap:8px">
+    <button class="btn primary block" id="vid"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 20h16"/></svg>Download video from this page</button>
+    <button class="btn block" id="all">Download all links on this page</button>
+  </div>
+
+  <div class="card">
+    <div class="media-h">Media on this page <span class="n" id="count"></span></div>
+    <div id="list"><div class="empty">No media detected on this page yet.</div></div>
+  </div>
+
+  <div class="foot"><a href="#" id="opts">Options</a><span>Free and open source · MIT</span></div>
+</div>
+<script src="popup.js"></script>

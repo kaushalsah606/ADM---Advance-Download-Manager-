@@ -1,0 +1,1298 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Advance Download Manager</title>
+<link rel="icon" type="image/png" href="/favicon.png">
+<style>
+:root{--bg:#f4f5f7;--panel:#fff;--line:#d9dce1;--text:#1d2330;--mute:#6b7280;--accent:#1769e0;--ok:#16874a;--err:#c62828;--sel:#dce9fb}
+@media (prefers-color-scheme:dark){:root{--bg:#14171c;--panel:#1c2027;--line:#2d333d;--text:#e6e9ef;--mute:#98a1b0;--accent:#5b9bff;--sel:#233553;--ok:#4cc38a;--err:#ff6b6b}}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{font:13px/1.4 system-ui,Segoe UI,sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column}
+button,input,select,textarea{font:inherit;color:inherit}
+button{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px 10px;cursor:pointer}
+button:hover:not(:disabled){border-color:var(--accent)}button:disabled{opacity:.45;cursor:default}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+input,select,textarea{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px 8px;width:100%}
+input[type=checkbox],input[type=radio]{width:auto}
+#menubar{display:flex;gap:2px;padding:2px 8px;background:var(--panel);border-bottom:1px solid var(--line);position:relative}
+#menubar>div{position:relative}
+#menubar>div>button{border:0;background:none;padding:5px 10px}
+.menu{display:none;position:absolute;left:0;top:100%;min-width:260px;background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.2);z-index:20;padding:4px}
+#menubar>div:hover .menu,#menubar>div.open .menu{display:block}
+.menu button{display:block;width:100%;text-align:left;border:0;background:none;padding:6px 12px;border-radius:4px}
+.menu button:hover{background:var(--sel)}.menu hr{border:0;border-top:1px solid var(--line);margin:4px 0}
+#toolbar{display:flex;flex-wrap:wrap;gap:6px;padding:8px 12px;background:var(--panel);border-bottom:1px solid var(--line);align-items:center}
+#toolbar .sp{flex:1}
+#toolbar #bTurbo.on{background:linear-gradient(135deg,#ff9800,#ff3d00);color:#fff;border-color:#ff6d00;box-shadow:0 0 10px rgba(255,109,0,.6);font-weight:600}
+#findbar{display:none;gap:6px;padding:6px 12px;background:var(--panel);border-bottom:1px solid var(--line);align-items:center}
+#findbar.on{display:flex}#findbar input[type=text]{max-width:280px}
+#banner{display:none;padding:6px 12px;background:#fff3cd;color:#664d03;border-bottom:1px solid var(--line)}
+#main{flex:1;display:flex;min-height:0}
+#side{width:210px;border-right:1px solid var(--line);background:var(--panel);overflow:auto;padding:8px 0}
+#side h4{margin:10px 14px 4px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--mute)}
+#side div.n{padding:5px 14px;cursor:pointer;display:flex;justify-content:space-between;gap:6px}
+#side div.n.on,#side div.n:hover{background:var(--sel)}
+#center{flex:1;display:flex;flex-direction:column;min-width:0}
+#tablewrap{flex:1;overflow:auto;background:var(--panel)}
+table{border-collapse:collapse;width:100%}
+th{position:sticky;top:0;background:var(--bg);text-align:left;font-weight:600;padding:6px 10px;border-bottom:1px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none}
+td{padding:6px 10px;border-bottom:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:340px}
+tr.sel td{background:var(--sel)}tr.hit td{outline:1px dashed var(--accent)}
+.bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden;min-width:90px}.bar i{display:block;height:100%;background:var(--accent)}
+.st-complete{color:var(--ok)}.st-error{color:var(--err)}.st-paused,.st-queued{color:var(--mute)}
+#detail{height:190px;border-top:1px solid var(--line);background:var(--panel);padding:10px 14px;display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;align-content:start;overflow:auto}
+#detail canvas{grid-column:1/3;width:100%;height:22px;border:1px solid var(--line);border-radius:4px}
+#detail .k{color:var(--mute)}#detail .wide{grid-column:1/3}
+dialog{border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text);padding:0;width:min(680px,94vw);max-height:92vh}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog form,dialog .box{padding:16px 18px;display:grid;gap:10px}
+dialog h3{margin:0 0 4px}
+#dAdd{width:min(640px,94vw)}
+#fAdd{padding:12px 16px;gap:7px}
+#fAdd h3{margin:0 0 2px;font-size:15px}
+#fAdd .row{grid-template-columns:100px 1fr;gap:6px;font-size:13px}
+#fAdd .row.chk{grid-template-columns:auto 1fr;margin-left:106px}
+#fAdd .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#fAdd .two .row{grid-template-columns:78px 1fr}
+#fAdd .auth label.chk{display:flex;align-items:center;gap:6px}
+#fAdd input:not([type=checkbox]),#fAdd select,#fAdd textarea{padding:5px 8px;font-size:13px}
+#fAdd textarea{resize:vertical;min-height:46px}
+#fAdd .foot{margin-top:2px}
+.row{display:grid;grid-template-columns:170px 1fr;gap:8px;align-items:center}
+.row.chk{grid-template-columns:auto 1fr}
+.row.info{grid-template-columns:170px 1fr}.row.info label{text-align:right}
+.foot{display:flex;gap:8px;justify-content:flex-end;margin-top:6px;flex-wrap:wrap}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:0 -18px;padding:0 18px;flex-wrap:wrap}
+.tabs button{border:0;border-bottom:2px solid transparent;border-radius:0;background:none}.tabs button.on{border-color:var(--accent);color:var(--accent)}
+.hint{color:var(--mute);font-size:12px}
+#toast{position:fixed;right:16px;bottom:16px;background:var(--text);color:var(--bg);padding:8px 14px;border-radius:8px;opacity:0;transition:.2s;pointer-events:none;max-width:70vw;display:flex;gap:10px;align-items:center}
+#toast.on{opacity:1;pointer-events:auto}
+#toast button{padding:4px 12px;color:inherit;background:transparent;border:1px solid color-mix(in srgb,currentColor 45%,transparent);border-radius:6px;font-weight:600;cursor:pointer}
+#toast button:hover{background:color-mix(in srgb,currentColor 18%,transparent);border-color:currentColor}
+.grid{max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:6px}
+fieldset{border:1px solid var(--line);border-radius:8px;margin:0;padding:8px 10px;display:grid;gap:8px}legend{color:var(--mute);font-size:12px}
+body.tb-small #toolbar .t{display:none}body.tb-text #toolbar .i{display:none}
+body.neon{--accent:#00e5ff;--sel:#0b3a44;--bg:#0b0f14;--panel:#111821;--line:#1f3a46;--text:#d8f6ff}body.neon #toolbar button.primary{box-shadow:0 0 10px var(--accent);color:#001014}
+@media(max-width:760px){#side{display:none}#detail{grid-template-columns:1fr}.row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="menubar"></div>
+<div id="toolbar">
+  <button class="primary" id="bAdd">+ Add URL</button>
+  <button id="bStart">Start / Resume</button>
+  <button id="bStop">Stop</button>
+  <button id="bStopAll">Stop All</button>
+  <button id="bDelete">Delete</button>
+  <button id="bDelDone">Delete Completed</button>
+  <button id="bOpts">Options</button>
+  <button id="bSched">Scheduler</button>
+  <button id="bQStart">Start Queue</button>
+  <button id="bQStop">Stop Queue</button>
+  <button id="bGrab">Grabber</button>
+  <button id="bTurbo">Turbo</button>
+  <span class="sp"></span><span id="total" class="hint"></span>
+</div>
+<div id="findbar">
+  <span>Find:</span><input type="text" id="fText" placeholder="text">
+  <select id="fScope" style="width:auto"><option value="name">File name</option><option value="desc">Description</option><option value="url">Site / link / parent page / referer</option></select>
+  <label><input type="checkbox" id="fCase"> Match case</label><label><input type="checkbox" id="fWhole"> Whole string</label>
+  <button id="fNext">Find next (F3)</button><button id="fClose">x</button>
+</div>
+<div id="banner"></div>
+<div id="main">
+  <div id="side"></div>
+  <div id="center">
+    <div id="tablewrap"><table><thead><tr id="head"></tr></thead><tbody id="rows"></tbody></table></div>
+    <div id="detail"><span class="hint">Select a download to see segments and details.</span></div>
+  </div>
+</div>
+<div id="toast"></div>
+<div id="dyn"></div>
+
+<!-- Add URL -->
+<dialog id="dAdd"><form method="dialog" id="fAdd">
+  <h3>Add new download</h3>
+  <div class="row"><label>URL(s)</label><textarea name="url" rows="2" placeholder="https://…  ftp://…  or an .m3u8 stream (one per line)" required></textarea></div>
+  <div id="probeInfo" class="hint"></div>
+  <div id="zipList" class="hint" style="max-height:130px;overflow:auto"></div>
+  <div class="row"><label>Save to</label><input name="saveDir" placeholder="Automatic (by category)"></div>
+  <div class="row chk"><input type="checkbox" name="rememberPath" id="aRem"><label for="aRem">Remember this path for the category</label></div>
+  <div class="two">
+    <div class="row"><label>File name</label><input name="fileName" placeholder="Automatic"></div>
+    <div class="row"><label>Category</label><select name="category"><option value="">Automatic</option></select></div>
+  </div>
+  <div class="two">
+    <div class="row"><label>Referer</label><input name="referer"></div>
+    <div class="row"><label>Description</label><input name="description"></div>
+  </div>
+  <div class="row auth"><label class="chk"><input type="checkbox" id="useAuth"> Authorization</label><span style="display:flex;gap:6px"><input name="username" placeholder="User" autocomplete="off"><input name="password" type="password" placeholder="Password" autocomplete="new-password"></span></div>
+  <div class="foot"><button type="button" id="aPreview">Preview zip</button><button type="button" id="aProbe">Check file</button><button type="button" id="aCancel">Cancel</button><button type="button" id="aLater">Download later</button><button type="submit" class="primary" id="aStart">Start download</button></div>
+</form></dialog>
+
+<!-- Download video (quality list; opened when the browser's "Download this video" button or the menu is used) -->
+<dialog id="dVideo" style="width:min(780px,96vw)"><div class="box">
+  <h3 style="display:flex;gap:8px;align-items:center"><img src="/favicon.png" width="20" height="20" alt=""> <span id="vTitleBar">Download video</span></h3>
+  <div id="vBody" style="display:grid;gap:10px;min-height:120px"></div>
+  <div class="foot" style="justify-content:space-between">
+    <span><button type="button" id="vLater" hidden>Download <u>L</u>ater</button></span>
+    <span style="display:flex;gap:8px"><button type="button" class="primary" id="vStart" hidden>Download</button><button type="button" id="vCancel">Cancel</button></span>
+  </div>
+</div></dialog>
+
+<!-- Download File Info (shown when a download is captured) -->
+<dialog id="dInfo" style="width:min(720px,96vw)"><div class="box">
+  <h3 style="display:flex;gap:8px;align-items:center"><img src="/favicon.png" width="20" height="20" alt=""> Download File Info</h3>
+  <div style="display:grid;grid-template-columns:1fr 150px;gap:16px">
+    <div style="display:grid;gap:9px;min-width:0">
+      <div class="row info"><label>URL</label><input id="iUrl" readonly title=""></div>
+      <div class="row info"><label>Category</label><span style="display:flex;gap:6px"><select id="iCat" style="flex:1"></select><button type="button" id="iCatAdd" title="New category" style="width:34px">+</button></span></div>
+      <div class="row info"><label>Save As</label><span style="display:flex;gap:6px"><input id="iSave" style="flex:1"><button type="button" id="iBrowse" title="Choose a folder" style="width:40px">…</button></span></div>
+      <fieldset style="margin-left:178px"><legend><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="iRem"><span>Remember this path for "<span id="iRemCat"></span>" category</span></label></legend>
+        <input id="iDir"></fieldset>
+      <div class="row info"><label>Description</label><input id="iDesc"></div>
+      <div id="iWarn" class="hint" style="min-height:1.2em"></div>
+    </div>
+    <div style="text-align:center;display:grid;gap:8px;align-content:start;padding-top:6px">
+      <div id="iIcon" style="font-size:58px;line-height:1.1">📁</div>
+      <div id="iSize" style="font-weight:600">…</div>
+      <div id="iType" class="hint"></div>
+      <button type="button" id="iPreview">Preview</button>
+    </div>
+  </div>
+  <div class="foot" style="justify-content:space-between">
+    <span style="display:flex;gap:8px"><button type="button" id="iLater">Download <u>L</u>ater</button></span>
+    <span style="display:flex;gap:8px"><button type="button" class="primary" id="iStart">Start Download</button><button type="button" id="fiCancel">Cancel</button></span>
+  </div>
+</div></dialog>
+
+<!-- Options -->
+<dialog id="dOpts"><div class="box">
+  <h3>Options</h3>
+  <div class="tabs" id="optTabs"></div>
+  <div id="optBody" style="display:grid;gap:10px"></div>
+  <div class="foot"><button id="oCancel">Cancel</button><button class="primary" id="oSave">Save</button></div>
+</div></dialog>
+
+<!-- Scheduler -->
+<dialog id="dSched"><div class="box">
+  <h3>Scheduler</h3>
+  <div class="row"><label>Queue</label><span style="display:flex;gap:6px"><select id="qSel"></select><button id="qNew">New…</button><button id="qDel">Delete</button></span></div>
+  <div id="qBody" style="display:grid;gap:10px"></div>
+  <div class="foot"><button id="qClose">Close</button><button id="qStartNow">Start now</button><button id="qStopNow">Stop</button><button class="primary" id="qSave">Apply</button></div>
+</div></dialog>
+
+<!-- Grabber -->
+<dialog id="dGrab"><div class="box">
+  <h3>Site Grabber</h3>
+  <div class="row"><label>Project name</label><input id="gName" placeholder="optional"></div>
+  <div class="row"><label>Start page</label><input id="gUrl" placeholder="https://example.com/gallery/"></div>
+  <div class="row"><label>Project template</label><span style="display:flex;gap:6px"><select id="gTpl"></select><button id="gSaveTpl" type="button">Save as template</button></span></div>
+  <div class="row chk"><input type="checkbox" id="gAuth"><label for="gAuth">Use authorization</label></div>
+  <div class="row"><label>Login / password</label><span style="display:flex;gap:6px"><input id="gUser"><input id="gPass" type="password"></span></div>
+  <fieldset><legend>Where to search</legend>
+    <div class="row chk"><input type="radio" name="gScope" id="gWhole"><label for="gWhole">Explore the whole site</label></div>
+    <div class="row chk"><input type="radio" name="gScope" id="gLevels" checked><label for="gLevels">Explore the specified number of link levels</label></div>
+    <div class="row"><label>Levels (this site / other)</label><span style="display:flex;gap:6px"><input id="gLv" type="number" value="2" min="0" max="10"><input id="gLvO" type="number" value="0" min="0" max="5"></span></div>
+    <div class="row chk"><input type="checkbox" id="gNoParent"><label for="gNoParent">Don't explore parent directories</label></div>
+    <div class="row chk"><input type="checkbox" id="gSub"><label for="gSub">Explore all sites within the main domain</label></div>
+    <div class="row chk"><input type="checkbox" id="gJs" checked><label for="gJs">Process JavaScript (screens script text for links; nothing is executed)</label></div>
+    <div class="row"><label>Don't explore (logout pages…)</label><input id="gLogout" placeholder="*logout*; */signout*"></div>
+    <div class="row"><label>Explore only paths</label><input id="gIncPath" placeholder="optional; separate with ;"></div>
+  </fieldset>
+  <fieldset><legend>Which files to download</legend>
+    <div class="row"><label>File types</label><span style="display:flex;gap:6px"><input id="gExt" placeholder="jpg,png"><select id="gFilter" style="width:auto"><option value="">Add filter…</option></select></span></div>
+    <div class="row"><label>Exclude paths/domains</label><input id="gExc" placeholder="*/ads/*; *tracker*"></div>
+    <div class="row"><label>File size (MB) min / max</label><span style="display:flex;gap:6px"><input id="gMin" type="number" min="0"><input id="gMax" type="number" min="0"></span></div>
+    <div class="row chk"><input type="checkbox" id="gSame" checked><label for="gSame">Search files on this site only</label></div>
+    <div class="row chk"><input type="checkbox" id="gDup"><label for="gDup">Hide duplicate files found in different locations</label></div>
+  </fieldset>
+  <fieldset><legend>Save and settings</legend>
+    <div class="row chk"><input type="checkbox" id="gMirror"><label for="gMirror">Use original relative subfolders, save pages and convert links for offline browsing</label></div>
+    <div class="row chk"><input type="checkbox" id="gOver"><label for="gOver">Overwrite existing files (otherwise a numbered name is used)</label></div>
+    <div class="row"><label>Cookie header (manual login)</label><input id="gCookie" placeholder="log in with your browser, then paste its Cookie header"></div>
+    <div class="row"><label>Explore at once (1-10)</label><input id="gConc" type="number" min="1" max="10" value="4"></div>
+  </fieldset>
+  <div class="hint" id="gStat"></div>
+  <div class="grid"><table><tbody id="gFiles"></tbody></table></div>
+  <div class="foot"><button id="gClose">Close</button><button id="gSched" type="button">Schedule…</button><button id="gSaveProj">Save project</button><button id="gStop">Stop</button><button id="gGo" class="primary">Start exploring</button><button id="gCheckAll">Check all</button><button id="gAdd">Add checked to list</button></div>
+</div></dialog>
+
+<!-- Import -->
+<dialog id="dImp"><div class="box">
+  <h3>Import downloads</h3>
+  <input type="file" id="iFile" accept=".txt,.html,.htm,.csv,.log,.sgx,.json,.ief,.ef2">
+  <textarea id="iText" rows="8" placeholder="Paste text or load a file – an .ief / .ef2 export, an Advance Download Manager export, or any text: all http(s)/ftp links are extracted"></textarea>
+  <div class="foot"><button id="iCancel">Cancel</button><button class="primary" id="iOk">Add all to queue</button></div>
+</div></dialog>
+
+<script>
+const TOKEN = '__TOKEN__';
+const APP_VERSION = '__VERSION__';
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+let S = { downloads: [], categories: [], queues: [], settings: {}, projects: [] };
+const dl = new Map();
+let sel = new Set(), filter = { kind: 'all' };
+const store = { get: (k, d) => { try { const v = localStorage.getItem('sg.' + k); return v == null ? d : JSON.parse(v); } catch { return d; } }, set: (k, v) => { try { localStorage.setItem('sg.' + k, JSON.stringify(v)); } catch { /* private mode */ } } };
+
+async function api(method, path, body) {
+  const r = await fetch(path, { method, headers: { 'X-Token': TOKEN, 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) { toast(j.error || r.statusText); throw new Error(j.error || r.statusText); }
+  return j;
+}
+function toast(m, actions = [], ms = 3500) {
+  const t = $('#toast'); t.textContent = m;
+  for (const a of actions) { const b = document.createElement('button'); b.textContent = a.label; b.onclick = () => { a.fn(); t.classList.remove('on'); }; t.append(b); }
+  t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), actions.length ? 8000 : ms);
+}
+const fmtB = n => n == null ? '—' : n < 1024 ? n + ' B' : n < 1048576 ? (n / 1024).toFixed(1) + ' KB' : n < 1073741824 ? (n / 1048576).toFixed(1) + ' MB' : (n / 1073741824).toFixed(2) + ' GB';
+// transfer rate: B/s below 1 KB, KB/s below 1 MB, MB/s below 1 GB, then GB/s
+const fmtSpeed = n => { n = Math.max(0, +n || 0); return n < 1024 ? Math.round(n) + ' B/s' : n < 1048576 ? Math.round(n / 1024) + ' KB/s' : n < 1073741824 ? (n / 1048576).toFixed(2) + ' MB/s' : (n / 1073741824).toFixed(2) + ' GB/s'; };
+const fmtT = s => s == null ? '' : s < 60 ? s + ' s' : s < 3600 ? Math.floor(s / 60) + 'm ' + (s % 60) + 's' : Math.floor(s / 3600) + 'h ' + Math.floor(s % 3600 / 60) + 'm';
+const fmtD = t => t ? new Date(t).toLocaleString() : '';
+function beep(freq) { try { const c = new (window.AudioContext || window.webkitAudioContext)(), o = c.createOscillator(), g = c.createGain(); o.frequency.value = freq; g.gain.value = 0.05; o.connect(g); g.connect(c.destination); o.start(); setTimeout(() => { o.stop(); c.close(); }, 160); } catch { /* no audio */ } }
+
+// ---- updates (installer build): never installs without a click ----
+async function checkUpdate(manual) {
+  let u;
+  try { u = await api('GET', '/api/update/check'); } catch { u = { error: 'offline' }; }
+  if (u.available) {
+    const pick = await modal('Update available', '<div>Version <b>' + esc(u.latest) + '</b> is available (you have ' + esc(u.current) + ').</div><div class="hint" style="white-space:pre-wrap;max-height:160px;overflow:auto">' + esc(u.notes || '') + '</div><div class="hint">The installer is verified against the release checksums before it runs. The app restarts when done.</div>', [{ label: 'Later' }, { label: 'Install now', primary: true }]);
+    if (pick === 'Install now') { try { await api('POST', '/api/update/install'); toast('Installing the update…'); } catch (e) { toast('Update failed: ' + e.message); } }
+  } else if (manual) {
+    modal('Check for updates', '<div>' + (u.error ? 'Could not check for updates: ' + esc(u.error) : 'You have the latest version (' + esc(u.current) + ').') + '</div>');
+  }
+}
+
+// generic modal built on <dialog>
+function modal(title, html, buttons = [{ label: 'Close' }]) {
+  return new Promise(resolve => {
+    const d = document.createElement('dialog');
+    d.innerHTML = `<div class="box"><h3>${esc(title)}</h3><div class="body" style="display:grid;gap:10px">${html}</div><div class="foot"></div></div>`;
+    const foot = d.querySelector('.foot');
+    for (const b of buttons) {
+      const el = document.createElement('button'); el.textContent = b.label; if (b.primary) el.className = 'primary';
+      el.onclick = async () => { if (b.fn && (await b.fn(d)) === false) return; resolve(b.label); d.close(); };
+      foot.append(el);
+    }
+    d.addEventListener('close', () => { d.remove(); resolve(null); });
+    $('#dyn').append(d); d.showModal();
+  });
+}
+
+// confirm() / prompt() would open the browser's own boxes ("127.0.0.1 says") in the native window: in-app dialogs instead
+const uiConfirm = (message, okLabel = 'OK', title = 'Advance Download Manager') => modal(title, `<div>${esc(message)}</div>`, [{ label: 'Cancel' }, { label: okLabel, primary: true }]).then(r => r === okLabel);
+function uiPrompt(message, value = '', title = 'Advance Download Manager') {
+  let answer = null;
+  setTimeout(() => { const i = document.getElementById('uiPromptV'); if (i) { i.focus(); i.select(); } }, 40);
+  return modal(title, `<label>${esc(message)}<input id="uiPromptV" type="text" style="width:100%;margin-top:6px" value="${esc(value)}"></label>`,
+    [{ label: 'Cancel' }, { label: 'OK', primary: true, fn: d => { answer = d.querySelector('#uiPromptV').value.trim(); } }]).then(() => answer || null);
+}
+
+// the native window (src: host/Program.cs) answers a few questions the page cannot ask the system itself
+const hostBridge = window.chrome && window.chrome.webview;
+const hostWaiters = new Map(); let hostSeq = 0;
+if (hostBridge) hostBridge.addEventListener('message', ev => { try { const m = JSON.parse(ev.data); const w = hostWaiters.get(m.id); if (w) { hostWaiters.delete(m.id); w(m); } } catch { /* not ours */ } });
+const hostCall = (type, timeout = 900) => new Promise(resolve => {
+  if (!hostBridge) return resolve(null);
+  const id = ++hostSeq, t = setTimeout(() => { hostWaiters.delete(id); resolve(null); }, timeout);
+  hostWaiters.set(id, m => { clearTimeout(t); resolve(m); });
+  hostBridge.postMessage(JSON.stringify({ type, id }));
+});
+/** The web address on the clipboard (what you copied last), or ''. Native window: asked from the host; browser: only when the permission is already granted. */
+async function clipboardUrl() {
+  let t = '';
+  const m = await hostCall('clipboard');
+  if (m) t = m.text || '';
+  else { try { const p = await navigator.permissions.query({ name: 'clipboard-read' }); if (p.state === 'granted') t = await navigator.clipboard.readText(); } catch { /* no permission: leave empty */ } }
+  t = String(t || '').trim();
+  return t.length < 2000 && /^(https?|ftp):\/\/\S+$/i.test(t) ? t : '';
+}
+
+// ---- browser-extension pairing prompt ----
+const shownPairs = new Set();
+function checkPairs() {
+  for (const p of (S.pendingPairs || [])) {
+    if (shownPairs.has(p.origin)) continue;
+    shownPairs.add(p.origin);
+    modal('Allow this browser extension to connect?',
+      `<div><b>${esc(p.name)}</b> in <b>${esc(p.browser || 'your browser')}</b> wants to connect to Advance Download Manager, so it can hand downloads from the browser to this app.</div>
+       <div class="hint">Only allow an extension you installed yourself. You can remove its access at any time in Options → Browser.</div>`,
+      [{ label: 'Deny' }, { label: 'Allow', primary: true }]).then(r => api('POST', '/api/pair/decision', { origin: p.origin, allow: r === 'Allow' }).catch(() => {}));
+  }
+}
+let vtTimer = 0;
+function videoTabInit() {
+  clearInterval(vtTimer);
+  const paint = () => {
+    const box = $('#vToolsInfo'); if (!box || !$('#dOpts').open || optTab !== 'Video') { clearInterval(vtTimer); return; }
+    const t = S.videoTools || {};
+    const line = (name, x) => `<div>${x && x.installed ? '● ' : '○ '}<b>${name}</b>: ${x && x.installed ? esc(x.version || 'installed') + ' <span class="hint">(' + esc(x.path) + ')</span>' : 'not installed'}</div>`;
+    box.innerHTML = line('yt-dlp', t.ytdlp) + line('FFmpeg', t.ffmpeg) + (t.error ? `<div style="color:#c62828">${esc(t.error)}</div>` : '');
+    $('#vtBar').innerHTML = toolsBar();
+    $('#vtInstall').disabled = !!t.installing;
+  };
+  api('GET', '/api/video/tools').catch(() => {});
+  paint(); vtTimer = setInterval(paint, 700);
+}
+$('#optBody').addEventListener('click', async e => {
+  const t = e.target.closest('#vtInstall,#vtUpdate,#vtAdd'); if (!t) return;
+  if (t.id === 'vtInstall') api('POST', '/api/video/tools/install', { tools: ['ytdlp', 'ffmpeg'] }).catch(() => {});
+  else if (t.id === 'vtUpdate') { t.disabled = true; try { const r = await api('POST', '/api/video/tools/update', {}); toast('Video engine: ' + (r.output || 'updated')); } catch { /* message shown */ } t.disabled = false; }
+  else if (t.id === 'vtAdd') { $('#dOpts').close(); videoPageDialog(); }
+});
+function browserTabInit() {
+  const box = $('#sysCapState'); if (!box) return;
+  api('GET', '/api/system-capture').then(r => {
+    if (!r.supported) { box.textContent = 'Available on Windows only.'; $('#o_syscap').disabled = true; return; }
+    box.textContent = r.active ? '● Active: plain-HTTP downloads of all programs are being captured.' : r.enabled ? '● Switched on, but not active (the app must be running).' : 'Off.';
+  }).catch(() => { box.textContent = ''; });
+}
+$('#optBody').addEventListener('click', async e => {
+  const t = e.target.closest('[data-revoke],[data-open],[data-store]'); if (!t) return;
+  if (t.dataset.revoke) { await api('POST', '/api/pair/revoke', { origin: t.dataset.revoke }); draft.pairedExtensions = (draft.pairedExtensions || []).filter(p => p.origin !== t.dataset.revoke); renderOpts(); }
+  else if (t.dataset.open) { try { await api('POST', t.dataset.open === 'folder' ? '/api/open-extension-folder' : '/api/open-browser', { browser: t.dataset.open }); } catch { /* toast shown */ } }
+  else if (t.dataset.store) window.open(t.dataset.store, '_blank');
+});
+
+// ---- "Download File Info": confirmation for captured downloads ----
+const infoSeen = new Set(), infoQueue = [];
+let infoCur = null, infoDirty = {};
+const joinPath = (dir, name) => { if (!dir) return name; const w = dir.includes('\\') || /^[A-Za-z]:/.test(dir); return dir.replace(/[\\/]+$/, '') + (w ? '\\' : '/') + name; };
+const splitPath = full => { const i = Math.max(full.lastIndexOf('\\'), full.lastIndexOf('/')); return i < 0 ? { dir: '', name: full } : { dir: full.slice(0, i + 1).replace(/[\\/]+$/, '') || full.slice(0, i + 1), name: full.slice(i + 1) }; };
+const ICONS = { zip: '🗜️', rar: '🗜️', '7z': '🗜️', gz: '🗜️', tar: '🗜️', iso: '💿', pdf: '📕', doc: '📘', docx: '📘', xls: '📗', xlsx: '📗', ppt: '📙', pptx: '📙', txt: '📄', exe: '⚙️', msi: '⚙️', apk: '📱', dmg: '💿',
+  mp3: '🎵', wav: '🎵', flac: '🎵', m4a: '🎵', mp4: '🎞️', mkv: '🎞️', avi: '🎞️', mov: '🎞️', webm: '🎞️', jpg: '🖼️', jpeg: '🖼️', png: '🖼️', gif: '🖼️', webp: '🖼️' };
+const fileIcon = name => ICONS[(name.split('.').pop() || '').toLowerCase()] || '📁';
+function checkProposals() {
+  for (const p of (S.proposals || [])) if (!infoSeen.has(p.id)) { infoSeen.add(p.id); infoQueue.push(p.id); }
+  if (infoCur) { const p = (S.proposals || []).find(x => x.id === infoCur.id); if (p) fillInfo(p, false); else if ($('#dInfo').open) closeInfo(true); } // answered elsewhere: close the stale window
+  if (!infoCur && infoQueue.length) showInfo(infoQueue.shift());
+}
+function fillInfo(p, first) {
+  infoCur = { id: p.id, p };
+  $('#iUrl').value = p.url; $('#iUrl').title = p.url;
+  const catSel = $('#iCat');
+  if (first || catSel.options.length !== S.categories.length) catSel.innerHTML = S.categories.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
+  if (first || !infoDirty.cat) catSel.value = p.category;
+  if (first || !infoDirty.save) { $('#iSave').value = joinPath(p.saveDir, p.fileName); $('#iDir').value = p.saveDir; }
+  $('#iRemCat').textContent = (S.categories.find(c => c.id === catSel.value) || {}).name || '';
+  $('#iSize').textContent = p.status === 'probing' ? 'Reading…' : p.size != null ? fmtB(p.size) : 'Unknown size';
+  $('#iType').textContent = p.contentType || '';
+  $('#iIcon').textContent = fileIcon(splitPath($('#iSave').value).name || p.fileName);
+  const warn = [];
+  if (p.error) warn.push('Could not read the file information (' + p.error + '). You can still start the download.');
+  if (p.inList) warn.push('This link is already in your download list.');
+  if (p.exists) warn.push('A file with this name already exists in that folder.');
+  $('#iWarn').textContent = warn.join(' ');
+  const zip = /\.(zip|jar)$/i.test(splitPath($('#iSave').value).name);
+  $('#iPreview').disabled = !zip; $('#iPreview').title = zip ? 'Show the files inside the archive without downloading it' : 'Preview is available for ZIP archives';
+}
+function showInfo(id) {
+  const p = (S.proposals || []).find(x => x.id === id); if (!p) { if (infoQueue.length) showInfo(infoQueue.shift()); return; }
+  infoDirty = {}; $('#iRem').checked = false; $('#iDesc').value = '';
+  fillInfo(p, true);
+  if (!$('#dInfo').open) $('#dInfo').showModal();
+  $('#iStart').focus();
+}
+function closeInfo(handled) {
+  const cur = infoCur; infoCur = null;
+  if ($('#dInfo').open) { $('#dInfo').dataset.handled = '1'; $('#dInfo').close(); }
+  if (cur && !handled) api('POST', `/api/proposals/${cur.id}/reject`, {}).catch(() => {});
+  if (infoQueue.length) setTimeout(() => showInfo(infoQueue.shift()), 50);
+}
+async function acceptInfo(action, duplicatePolicy) {
+  if (!infoCur) return;
+  const { dir, name } = splitPath($('#iSave').value.trim());
+  const body = { action, category: $('#iCat').value, fileName: name || undefined, saveDir: dir || undefined, description: $('#iDesc').value, rememberPath: $('#iRem').checked, duplicatePolicy };
+  let r;
+  try { r = await api('POST', `/api/proposals/${infoCur.id}/accept`, body); } catch { closeInfo(true); return; }
+  if (r.duplicate) { // the link is already in the list: ask what to do ("Duplicate download link")
+    const ans = await askDuplicate([r.existing]);
+    if (ans) return acceptInfo(action, ans.policy);
+    return; // Cancel: back to the Download File Info window
+  }
+  closeInfo(true);
+  toast(action === 'later' ? 'Added to the main download queue' : 'Download started');
+}
+$('#iStart').onclick = () => acceptInfo('start');
+$('#iLater').onclick = () => acceptInfo('later');
+$('#fiCancel').onclick = () => closeInfo(false);
+$('#dInfo').addEventListener('close', () => { if ($('#dInfo').dataset.handled) { delete $('#dInfo').dataset.handled; return; } if (infoCur) closeInfo(false); }); // Esc = Cancel
+$('#iCat').onchange = () => {
+  infoDirty.cat = true; infoDirty.save = true;
+  const c = S.categories.find(x => x.id === $('#iCat').value); if (!c) return;
+  const name = splitPath($('#iSave').value).name;
+  $('#iSave').value = joinPath(c.dir, name); $('#iDir').value = c.dir; $('#iRemCat').textContent = c.name;
+};
+$('#iDir').oninput = () => { infoDirty.save = true; $('#iSave').value = joinPath($('#iDir').value.trim(), splitPath($('#iSave').value).name); };
+$('#iSave').oninput = () => { infoDirty.save = true; $('#iDir').value = splitPath($('#iSave').value).dir; $('#iIcon').textContent = fileIcon(splitPath($('#iSave').value).name); };
+$('#iBrowse').onclick = async () => {
+  try {
+    const r = await api('POST', '/api/pick-folder', { start: splitPath($('#iSave').value).dir });
+    if (r.path) { infoDirty.save = true; $('#iSave').value = joinPath(r.path, splitPath($('#iSave').value).name); $('#iDir').value = r.path; }
+  } catch { /* message shown by api() */ }
+};
+$('#iCatAdd').onclick = async () => {
+  const base = (S.categories[0] && S.categories[0].dir.replace(/[\\/][^\\/]*$/, '')) || '';
+  let entered = null;
+  const pick = await modal('New category', `<div class="row"><label>Name</label><input id="ncName"></div><div class="row"><label>Folder</label><input id="ncDir" placeholder="${esc(base)}"></div>`,
+    [{ label: 'Cancel' }, { label: 'Add', primary: true, fn: d => { const name = d.querySelector('#ncName').value.trim(); if (!name) return false; entered = { name, dir: d.querySelector('#ncDir').value.trim() }; } }]);
+  if (pick !== 'Add' || !entered) return;
+  const id = entered.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Date.now().toString(36).slice(-3);
+  const cats = [...S.categories, { id, name: entered.name, exts: [], dir: entered.dir || joinPath(base, entered.name) }];
+  await api('PUT', '/api/categories', cats);
+  S.categories = cats; // the server's state event follows; show the new category right away
+  $('#iCat').innerHTML = cats.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
+  $('#iCat').value = id; $('#iCat').onchange();
+};
+$('#iPreview').onclick = async () => {
+  if (!infoCur) return;
+  $('#iWarn').textContent = 'Reading the archive directory…';
+  try {
+    const z = await api('POST', `/api/proposals/${infoCur.id}/preview`, {});
+    $('#iWarn').textContent = '';
+    modal('Archive contents', `<div class="hint">${z.count} file(s)</div><div style="max-height:300px;overflow:auto">${z.files.slice(0, 300).map(f => `<div>${esc(f.name)}  <span class="hint">(${fmtB(f.size)})${f.encrypted ? ' 🔒' : ''}</span></div>`).join('')}${z.count > 300 ? `<div class="hint">… and ${z.count - 300} more</div>` : ''}</div>`);
+  } catch { $('#iWarn').textContent = 'The archive directory could not be read.'; }
+};
+
+// ---- "Download this video" (yt-dlp): quality dialog, tools, options ----
+const vidSeen = new Set(), vidQueue = [];
+let vidCur = null, vidShown = '', vidEdited = {};
+const fmtDur = s => { s = Math.round(s || 0); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(x).padStart(2, '0'); };
+const fmtApprox = n => n ? '≈ ' + fmtB(n) : '';
+function checkVideoRequests() {
+  for (const r of (S.videoRequests || [])) if (!vidSeen.has(r.id)) { vidSeen.add(r.id); vidQueue.push(r.id); }
+  if (vidCur) { const r = (S.videoRequests || []).find(x => x.id === vidCur); if (r) renderVideo(r); else if ($('#dVideo').open) closeVideo(true); }
+  if (!vidCur && vidQueue.length) showVideo(vidQueue.shift());
+}
+function showVideo(id) {
+  const r = (S.videoRequests || []).find(x => x.id === id);
+  if (!r) { if (vidQueue.length) showVideo(vidQueue.shift()); return; }
+  vidCur = id; vidShown = ''; vidEdited = {};
+  renderVideo(r);
+  if (!$('#dVideo').open) $('#dVideo').showModal();
+}
+function closeVideo(handled) {
+  const id = vidCur; vidCur = null; vidShown = '';
+  if ($('#dVideo').open) { $('#dVideo').dataset.handled = '1'; $('#dVideo').close(); }
+  if (id && !handled) api('POST', `/api/video/${id}/reject`, {}).catch(() => {});
+  if (vidQueue.length) setTimeout(() => showVideo(vidQueue.shift()), 50);
+}
+function toolsBar() {
+  const t = (S.videoTools || {}).installing; if (!t) return '';
+  const pct = t.total ? Math.floor(t.received / t.total * 100) : 0;
+  return `<div id="vInstall"><div class="hint">Downloading ${esc(t.tool || '…')}: ${fmtB(t.received)}${t.total ? ' of ' + fmtB(t.total) : ''}</div><div style="height:8px;border-radius:5px;background:var(--line);overflow:hidden"><div style="height:100%;width:${pct}%;background:var(--accent,#1769e0)"></div></div></div>`;
+}
+function renderVideo(r) {
+  const tools = S.videoTools || {};
+  const key = r.id + ':' + r.status + ':' + (r.error ? r.error.code : '') + ':' + (tools.installing ? 'i' : '') + ':' + (tools.error || '');
+  if (key === vidShown) { const bar = $('#vInstall'); if (bar && tools.installing) bar.outerHTML = toolsBar(); return; }
+  vidShown = key;
+  const body = $('#vBody'), ready = r.status === 'ready';
+  $('#vStart').hidden = $('#vLater').hidden = !ready;
+  $('#vTitleBar').textContent = ready ? 'Download video' : 'Download video';
+  const host = (() => { try { return new URL(r.urls[0]).hostname.replace(/^www\./, ''); } catch { return ''; } })();
+  if (r.status === 'probing') {
+    body.innerHTML = `<div style="padding:18px 4px"><b>Reading the video information…</b><div class="hint">${esc(host)}</div>${toolsBar()}</div>`;
+  } else if (r.status === 'needs-tools') {
+    const sz = tools.sizes || {};
+    body.innerHTML = `<div><b>One-time setup: the video engine</b></div>
+      <div class="hint">To download videos from YouTube, Facebook, Instagram, TikTok and more than a thousand other sites, the app uses two free, open-source tools: <b>yt-dlp</b> (about ${sz.ytdlp || 18} MB) reads the video pages and <b>FFmpeg</b> (about ${sz.ffmpeg || 110} MB) joins video and sound. They are downloaded once from their official sites and checked against their published checksums.</div>
+      ${tools.error ? `<div style="color:#c62828">${esc(tools.error)}</div>` : ''}${toolsBar()}
+      <div class="row" style="grid-template-columns:auto auto 1fr;gap:8px"><button type="button" class="primary" id="vInstallAll" ${tools.installing ? 'disabled' : ''}>Install both</button><button type="button" id="vInstallYt" ${tools.installing ? 'disabled' : ''}>Install yt-dlp only</button><span></span></div>
+      <div class="hint">Only download videos you have the right to download; some sites' terms forbid it. DRM-protected and live streams are not supported.</div>`;
+  } else if (r.status === 'error') {
+    const e = r.error || {};
+    const hint = e.code === 'login' && !e.hadCookies ? '<div class="hint">Open the video in your browser (signed in) and press the <b>Download this video</b> button there: the extension passes your login to the app.</div>' : '';
+    const media = (r.media || []).map(m => `<div class="row" style="grid-template-columns:1fr auto;gap:8px"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(m.url)}">🎞 ${esc((m.url.split('?')[0].split('/').pop()) || m.url)} <span class="hint">${esc(m.type)} ${m.size ? fmtB(m.size) : ''}</span></span><button type="button" data-vmedia="${esc(m.url)}">Download</button></div>`).join('');
+    body.innerHTML = `<div style="color:#c62828"><b>This video could not be read</b></div><div>${esc(e.message || 'Unknown error')}</div>${hint}
+      ${media ? `<div class="hint" style="margin-top:6px">Media files found on the page:</div>${media}` : ''}
+      <div class="row" style="grid-template-columns:auto auto 1fr;gap:8px"><button type="button" id="vRetry">Try again</button><button type="button" id="vUpdate" title="Sites change often; a newer yt-dlp may fix this">Update the video engine</button><span></span></div>`;
+  } else {
+    const i = r.info;
+    const choices = i.choices.map(c => `<label class="vc" style="display:flex;gap:8px;align-items:center;padding:5px 8px;border:1px solid var(--line);border-radius:7px;cursor:pointer"><input type="radio" name="vq" value="${esc(c.id)}" ${c.id === i.defaultChoice ? 'checked' : ''}> <b>${esc(c.label)}</b> <span class="hint">${esc(c.detail)}${c.needsFfmpeg && c.kind !== 'audio' ? ' · joined with FFmpeg' : ''}</span><span style="margin-left:auto">${fmtApprox(c.size)}</span></label>`).join('');
+    body.innerHTML = `<div style="display:grid;grid-template-columns:210px 1fr;gap:16px">
+      <div style="display:grid;gap:6px;align-content:start">
+        ${i.thumbnail ? `<img src="${esc(i.thumbnail)}" referrerpolicy="no-referrer" alt="" style="width:210px;aspect-ratio:16/9;object-fit:cover;border-radius:8px;background:#222" onerror="this.style.display='none'">` : ''}
+        <div class="hint">${esc(i.extractor)}${i.uploader ? ' · ' + esc(i.uploader) : ''}${i.duration ? ' · ' + fmtDur(i.duration) : ''}</div>
+      </div>
+      <div style="display:grid;gap:8px;min-width:0">
+        <div class="row info"><label>File name</label><input id="vName" value="${esc(i.title)}"></div>
+        <div class="row info"><label>Save to</label><span style="display:flex;gap:6px"><input id="vDir" style="flex:1" value="${esc(r.dirs.video)}"><button type="button" id="vBrowse" title="Choose a folder" style="width:40px">…</button></span></div>
+        <div id="vChoices" style="display:grid;gap:4px;max-height:240px;overflow:auto">${choices}</div>
+        ${i.moreWithFfmpeg ? '<div class="hint">More qualities are possible with FFmpeg. <button type="button" id="vInstallFf" ' + (tools.installing ? 'disabled' : '') + '>Install FFmpeg</button></div>' + toolsBar() : ''}
+      </div></div>`;
+    const dir = $('#vDir'), pick = () => (body.querySelector('[name=vq]:checked') || {}).value;
+    dir.oninput = () => { vidEdited.dir = true; };
+    body.querySelectorAll('[name=vq]').forEach(x => x.onchange = () => { if (!vidEdited.dir) dir.value = /^audio/.test(pick()) ? r.dirs.audio : r.dirs.video; });
+  }
+}
+async function acceptVideo(action) {
+  const r = (S.videoRequests || []).find(x => x.id === vidCur); if (!r || r.status !== 'ready') return;
+  const choiceId = ($('#vBody').querySelector('[name=vq]:checked') || {}).value;
+  try { await api('POST', `/api/video/${r.id}/accept`, { choiceId, fileName: $('#vName').value, saveDir: $('#vDir').value.trim(), action }); } catch { return; }
+  closeVideo(true);
+  toast(action === 'later' ? 'Video added to the main download queue' : 'Video download started');
+}
+$('#vStart').onclick = () => acceptVideo('start');
+$('#vLater').onclick = () => acceptVideo('later');
+$('#vCancel').onclick = () => closeVideo(false);
+$('#dVideo').addEventListener('close', () => { if ($('#dVideo').dataset.handled) { delete $('#dVideo').dataset.handled; return; } if (vidCur) closeVideo(false); }); // Esc = Cancel
+$('#vBody').addEventListener('click', async e => {
+  const t = e.target.closest('button'); if (!t) return;
+  if (t.id === 'vInstallAll') api('POST', '/api/video/tools/install', { tools: ['ytdlp', 'ffmpeg'] }).catch(() => {});
+  else if (t.id === 'vInstallYt') api('POST', '/api/video/tools/install', { tools: ['ytdlp'] }).catch(() => {});
+  else if (t.id === 'vInstallFf') api('POST', '/api/video/tools/install', { tools: ['ffmpeg'] }).catch(() => {});
+  else if (t.id === 'vRetry') { vidShown = ''; api('POST', `/api/video/${vidCur}/retry`, {}).catch(() => {}); }
+  else if (t.id === 'vUpdate') { t.disabled = true; t.textContent = 'Updating…'; try { const r = await api('POST', '/api/video/tools/update', {}); toast('Video engine: ' + (r.output || 'updated')); } catch { /* message shown */ } t.textContent = 'Update the video engine'; t.disabled = false; }
+  else if (t.id === 'vBrowse') { try { const r = await api('POST', '/api/pick-folder', { start: $('#vDir').value }); if (r.path) { vidEdited.dir = true; $('#vDir').value = r.path; } } catch { /* message shown */ } }
+  else if (t.dataset.vmedia) { try { await api('POST', '/api/propose', { url: t.dataset.vmedia, source: 'browser', startNow: true, queue: null }); closeVideo(false); } catch { /* message shown */ } }
+});
+function videoPageDialog() {
+  modal('Download video from a page address', '<div class="hint">Paste the address of a page with a video (YouTube, Facebook, Instagram, TikTok, ...). You can also use the <b>Download this video</b> button that the browser extension shows on videos: it also passes your login for videos that need one.</div><div class="row"><label>Page address</label><input id="vpUrl" placeholder="https://"></div>',
+    [{ label: 'Cancel' }, { label: 'Continue', primary: true, fn: async d => { const u = d.querySelector('#vpUrl').value.trim(); if (!/^https?:\/\//i.test(u)) return false; await api('POST', '/api/video/open', { url: u, source: 'app' }); } }]);
+}
+
+// ---- live updates ----
+const es = new EventSource('/api/events?t=' + TOKEN);
+es.addEventListener('state', e => { S = JSON.parse(e.data); dl.clear(); S.downloads.forEach(d => dl.set(d.id, d)); renderAll(); });
+es.addEventListener('update', e => { const d = JSON.parse(e.data); const old = dl.get(d.id); dl.set(d.id, d); if (old && old.status !== 'error' && d.status === 'error' && S.settings.sounds?.error) beep(220); maybeAskAuth(d); scheduleRender(); });
+es.addEventListener('removed', e => { const id = JSON.parse(e.data); dl.delete(id); sel.delete(id); scheduleRender(); });
+es.addEventListener('complete', e => {
+  const d = JSON.parse(e.data); if (S.settings.sounds?.complete) beep(880);
+  toast('Download complete: ' + d.fileName, [{ label: 'Open', fn: () => api('POST', `/api/downloads/${d.id}/open`, { what: 'file' }) }, { label: 'Open with…', fn: () => api('POST', `/api/downloads/${d.id}/open`, { what: 'with' }) }, { label: 'Open folder', fn: () => api('POST', `/api/downloads/${d.id}/open`, { what: 'folder' }) }]);
+});
+es.addEventListener('grabber', e => { const g = JSON.parse(e.data); if (g.id === grabId) { $('#gStat').textContent = `${g.running ? 'Exploring' : 'Done'}: ${g.stats.pages} pages, ${g.count} files, ${g.stats.filtered || 0} filtered, ${g.stats.errors} errors${g.error ? ' – ' + g.error : ''}`; if (!g.running) loadGrab(); } });
+es.addEventListener('collect', e => openCollect(JSON.parse(e.data).id));
+let rt = 0; function scheduleRender() { if (!rt) rt = setTimeout(() => { rt = 0; renderAll(); }, 250); }
+
+// ---- columns / sorting / find ----
+const COLS = [
+  { id: 'name', label: 'File name', v: d => d.fileName, s: d => d.fileName.toLowerCase() },
+  { id: 'q', label: 'Q', v: d => (S.queues.find(q => q.id === d.queue)?.type === 'sync' ? 'S' : d.queue ? 'Q' : ''), s: d => d.queue || '' },
+  { id: 'size', label: 'Size', v: d => (d.sizeEstimated && d.size ? '~' : '') + fmtB(d.size), s: d => d.size ?? -1 },
+  { id: 'progress', label: 'Progress', html: true, v: d => { const p = d.size ? Math.min(100, d.done / d.size * 100) : (d.status === 'complete' ? 100 : 0); return `<div class="bar"><i style="width:${p}%"></i></div>`; }, s: d => d.size ? d.done / d.size : 0 },
+  { id: 'status', label: 'Status', cls: d => 'st-' + d.status, v: d => d.status === 'downloading' ? `Downloading${d.kind === 'hls' ? ' stream' : ''} (${d.conns}↯)` : d.status === 'error' ? 'Error: ' + d.error + (d.retryAt > Date.now() ? ' – retry in ' + Math.ceil((d.retryAt - Date.now()) / 1000) + 's' : '') : d.status, s: d => d.status },
+  { id: 'speed', label: 'Transfer rate', v: d => d.speed ? fmtSpeed(d.speed) : '', s: d => d.speed },
+  { id: 'eta', label: 'Time left', v: d => fmtT(d.eta), s: d => d.eta ?? 1e12 },
+  { id: 'added', label: 'Added', v: d => fmtD(d.added), s: d => d.added },
+  { id: 'lastTry', label: 'Last try date', v: d => fmtD(d.lastTry), s: d => d.lastTry || 0 },
+  { id: 'desc', label: 'Description', v: d => d.description, s: d => d.description.toLowerCase() },
+  { id: 'dir', label: 'Save to', v: d => d.saveDir, s: d => d.saveDir.toLowerCase() },
+  { id: 'referer', label: 'Referer', v: d => d.referer || '', s: d => (d.referer || '').toLowerCase() },
+  { id: 'parent', label: 'Parent web page', v: d => d.referer || '', s: d => (d.referer || '').toLowerCase() },
+];
+let cols = store.get('cols', ['name', 'q', 'size', 'progress', 'status', 'speed', 'eta', 'added']);
+let sortBy = store.get('sort', { id: 'added', dir: -1 });
+const find = { text: '', scope: 'name', cs: false, whole: false, pos: -1 };
+function matches(d) {
+  if (!find.text) return true;
+  const hay = find.scope === 'name' ? d.fileName : find.scope === 'desc' ? d.description : [d.url, d.referer || ''].join(' ');
+  const a = find.cs ? hay : hay.toLowerCase(), b = find.cs ? find.text : find.text.toLowerCase();
+  return find.whole ? a === b : a.includes(b);
+}
+
+function visible() {
+  let l = [...dl.values()];
+  const f = filter;
+  if (f.kind === 'unfinished') l = l.filter(d => d.status !== 'complete');
+  else if (f.kind === 'finished') l = l.filter(d => d.status === 'complete');
+  else if (f.kind === 'cat') l = l.filter(d => d.category === f.id);
+  else if (f.kind === 'queue') l = l.filter(d => d.queue === f.id);
+  l = l.filter(matches);
+  const c = COLS.find(x => x.id === sortBy.id) || COLS[7];
+  return l.sort((a, b) => { const x = c.s(a), y = c.s(b); return (x < y ? -1 : x > y ? 1 : 0) * sortBy.dir; });
+}
+function renderTurbo() {
+  const on = !!(S.settings && S.settings.turbo), b = $('#bTurbo');
+  b.classList.toggle('on', on);
+  const t = b.querySelector('.t'); if (t) t.textContent = on ? 'Turbo ON' : 'Turbo';
+  b.title = on ? 'Turbo mode is on: no speed limits, up to ' + S.settings.turboConnections + ' connections per download. Click to turn off.' : 'Turbo mode: remove all speed limits and use up to ' + S.settings.turboConnections + ' connections per download';
+}
+function renderAll() { renderSide(); renderHead(); renderRows(); renderDetail(); renderBanner(); renderTurbo(); checkPairs(); checkProposals(); checkVideoRequests(); }
+function renderBanner() {
+  const b = $('#banner'), w = S.quotaWaitUntil;
+  if (w && w > Date.now()) { b.style.display = 'block'; b.textContent = `Download limit reached – downloading resumes automatically at ${new Date(w).toLocaleTimeString()}.`; } else b.style.display = 'none';
+}
+function renderSide() {
+  const n = (k, id, label, count) => `<div class="n ${filter.kind === k && filter.id === id ? 'on' : ''}" data-k="${k}" data-id="${esc(id || '')}"><span>${esc(label)}</span><span class="hint">${count ?? ''}</span></div>`;
+  const all = [...dl.values()];
+  $('#side').innerHTML = '<h4>Downloads</h4>' + n('all', '', 'All downloads', all.length) + n('unfinished', '', 'Unfinished', all.filter(d => d.status !== 'complete').length) + n('finished', '', 'Finished', all.filter(d => d.status === 'complete').length) +
+    '<h4>Categories</h4>' + S.categories.map(c => n('cat', c.id, c.name, all.filter(d => d.category === c.id).length)).join('') +
+    '<h4>Queues</h4>' + S.queues.map(q => n('queue', q.id, (q.running ? '▶ ' : '') + q.name, all.filter(d => d.queue === q.id).length)).join('') +
+    (S.projects.length ? '<h4>Grabber projects</h4>' + S.projects.map(p => `<div class="n" data-proj="${p.id}"><span>${p.running ? '▶ ' : p.schedule?.enabled ? '⏰ ' : ''}${esc(p.name)}</span></div>`).join('') : '');
+}
+function renderHead() {
+  $('#head').innerHTML = cols.map(id => { const c = COLS.find(x => x.id === id); return `<th data-c="${id}">${esc(c.label)}${sortBy.id === id ? (sortBy.dir > 0 ? ' ▲' : ' ▼') : ''}</th>`; }).join('');
+}
+function renderRows() {
+  const l = visible();
+  $('#rows').innerHTML = l.map(d => `<tr data-id="${d.id}" class="${sel.has(d.id) ? 'sel' : ''}${find.text && l[find.pos]?.id === d.id ? ' hit' : ''}">` +
+    cols.map(id => { const c = COLS.find(x => x.id === id); const v = c.v(d); return `<td class="${c.cls ? c.cls(d) : ''}" title="${esc(id === 'name' ? d.url : id === 'status' ? d.error || '' : '')}">${c.html ? v : esc(v)}</td>`; }).join('') + '</tr>').join('')
+    || `<tr><td colspan="${cols.length}" class="hint" style="padding:30px">No downloads here. Use “Add URL”.</td></tr>`;
+  const run = [...dl.values()].filter(d => d.status === 'downloading');
+  $('#total').textContent = run.length ? `${run.length} active · ${fmtSpeed(run.reduce((a, d) => a + d.speed, 0))}` : '';
+  const has = sel.size > 0;
+  ['bStart', 'bStop', 'bDelete'].forEach(i => $('#' + i).disabled = !has);
+}
+function renderDetail() {
+  const id = [...sel][0], d = id && dl.get(id), box = $('#detail');
+  if (!d) { box.innerHTML = '<span class="hint">Select a download to see segments and details.</span>'; return; }
+  if (box.dataset.id === d.id && box.contains(document.activeElement) && document.activeElement.tagName === 'INPUT') { paintSeg(d); return; } // do not steal focus from the limiter box
+  box.dataset.id = d.id;
+  box.innerHTML = `<canvas id="seg" width="900" height="22"></canvas>
+   <div class="wide"><span class="k">URL </span>${esc(d.url)}</div><div><span class="k">Save to </span>${esc(d.saveDir)}</div>
+   <div><span class="k">Resume </span>${d.resumable ? 'supported' : 'not supported'} · <span class="k">Connections </span>${d.conns}</div>
+   <div><span class="k">Downloaded </span>${fmtB(d.done)} of ${fmtB(d.size)}</div><div><span class="k">Category </span>${esc(d.category)}</div>
+   <div class="wide" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+     <b>Speed Limiter</b> <input id="dLim" type="number" min="0" placeholder="KB/s (0 = off)" style="width:130px" value="${d.speedLimit ? Math.round(d.speedLimit / 1024) : ''}">
+     <label><input type="checkbox" id="dRem"> remember on stop/resume</label>
+     <b>When done</b> <label><input type="checkbox" id="dExit"> exit</label> <label><input type="checkbox" id="dHang"> hang up</label> <label><input type="checkbox" id="dShut"> turn off computer</label> <label><input type="checkbox" id="dForce"> force</label>
+     <button id="dApply">Apply</button> <button id="dOpen">Open</button> <button id="dFolder">Open folder</button></div>`;
+  paintSeg(d);
+  $('#dApply').onclick = () => api('POST', `/api/downloads/${d.id}/options`, { speedLimit: (+$('#dLim').value || 0) * 1024, rememberLimit: $('#dRem').checked, afterDone: ($('#dExit').checked || $('#dHang').checked || $('#dShut').checked) ? { exit: $('#dExit').checked, hangup: $('#dHang').checked, shutdown: $('#dShut').checked, force: $('#dForce').checked } : null }).then(() => toast('Applied'));
+  $('#dOpen').onclick = () => api('POST', `/api/downloads/${d.id}/open`, { what: 'file' });
+  $('#dFolder').onclick = () => api('POST', `/api/downloads/${d.id}/open`, { what: 'folder' });
+}
+function paintSeg(d) {
+  const c = $('#seg'); if (!c) return; const x = c.getContext('2d'), W = c.width;
+  x.fillStyle = getComputedStyle(document.body).getPropertyValue('--line'); x.fillRect(0, 0, W, 22);
+  if (d.size) {
+    x.fillStyle = '#2f80ed';
+    if (d.status === 'complete') x.fillRect(0, 0, W, 22); else if (d.segments.length) d.segments.forEach(([s, p]) => x.fillRect(s / d.size * W, 0, Math.max(1, (p - s) / d.size * W), 22)); else x.fillRect(0, 0, d.done / d.size * W, 22);
+    x.fillStyle = '#e8368f'; d.segments.forEach(([s]) => x.fillRect(s / d.size * W, 0, 2, 22));
+  }
+}
+
+// ---- interactions ----
+$('#head').onclick = e => { const th = e.target.closest('th'); if (!th) return; const id = th.dataset.c; sortBy = { id, dir: sortBy.id === id ? -sortBy.dir : 1 }; store.set('sort', sortBy); renderAll(); };
+$('#head').oncontextmenu = e => { e.preventDefault(); columnsDialog(); };
+$('#side').onclick = e => {
+  const n = e.target.closest('.n'); if (!n) return;
+  if (n.dataset.proj) { openGrab(S.projects.find(p => p.id === n.dataset.proj)); return; }
+  filter = { kind: n.dataset.k, id: n.dataset.id }; renderAll();
+};
+$('#rows').onclick = e => { const tr = e.target.closest('tr[data-id]'); if (!tr) return; if (!(e.ctrlKey || e.metaKey)) sel.clear(); sel.has(tr.dataset.id) ? sel.delete(tr.dataset.id) : sel.add(tr.dataset.id); renderAll(); };
+$('#rows').ondblclick = e => { const tr = e.target.closest('tr[data-id]'); if (!tr) return; const d = dl.get(tr.dataset.id); d.status === 'complete' ? api('POST', `/api/downloads/${d.id}/open`, { what: 'file' }) : propertiesDialog(d); };
+$('#rows').oncontextmenu = e => {
+  const tr = e.target.closest('tr[data-id]'); if (!tr) return; e.preventDefault();
+  if (!sel.has(tr.dataset.id)) { sel.clear(); sel.add(tr.dataset.id); renderAll(); }
+  const d = dl.get(tr.dataset.id), id = d.id;
+  const qopts = S.queues.map(q => `<button data-a="queue:${q.id}" style="display:block;width:100%;text-align:left;margin:2px 0">Move to: ${esc(q.name)}</button>`).join('');
+  modal('Download', `<div class="hint">${esc(d.fileName)}</div>
+   <button data-a="props">Properties…</button><button data-a="redownload">Redownload</button><button data-a="up">Move up in queue</button><button data-a="down">Move down in queue</button>
+   <button data-a="copy">Copy address</button><button data-a="noqueue">Remove from queue</button>${qopts}`, [{ label: 'Close' }]);
+};
+// context-menu actions are buttons inside the generic modal; delegate their clicks
+document.addEventListener('click', e => {
+  const b = e.target.closest('#dyn button[data-a]'); if (!b) return;
+  const id = [...sel][0], d = dl.get(id); if (!d) return; const a = b.dataset.a;
+  b.closest('dialog').close();
+  if (a === 'props') propertiesDialog(d);
+  else if (a === 'redownload') api('POST', `/api/downloads/${id}/redownload`);
+  else if (a === 'up' || a === 'down') api('POST', `/api/downloads/${id}/reorder`, { direction: a });
+  else if (a === 'copy') navigator.clipboard?.writeText(d.url).then(() => toast('Address copied'));
+  else if (a === 'noqueue') api('PATCH', `/api/downloads/${id}`, { queue: null });
+  else if (a.startsWith('queue:')) api('PATCH', `/api/downloads/${id}`, { queue: a.slice(6) });
+});
+const each = fn => Promise.all([...sel].map(fn));
+$('#bStart').onclick = () => each(id => api('POST', `/api/downloads/${id}/start`));
+$('#bStop').onclick = () => each(id => api('POST', `/api/downloads/${id}/stop`));
+$('#bStopAll').onclick = () => api('POST', '/api/stop-all');
+$('#bDelDone').onclick = async () => { if (await uiConfirm('Remove all completed downloads from the list?', 'Remove')) api('POST', '/api/delete-completed', {}); };
+$('#bQStart').onclick = () => api('POST', `/api/queues/${filter.kind === 'queue' ? filter.id : 'main'}/start`);
+$('#bQStop').onclick = () => api('POST', `/api/queues/${filter.kind === 'queue' ? filter.id : 'main'}/stop`);
+async function deleteSelected() {
+  if (!sel.size) return;
+  const incomplete = [...sel].some(id => dl.get(id)?.status !== 'complete');
+  let files = false;
+  const r = await modal('Confirm deletion of downloads', `<div>${incomplete ? 'Some selected downloads are not complete. ' : ''}Delete ${sel.size} selected download(s) from the list?</div><label><input type="checkbox" id="delFiles"> Delete completely downloaded files from your hard disk as well. Be careful!</label>`,
+    [{ label: 'No' }, { label: 'Yes', primary: true, fn: d => { files = d.querySelector('#delFiles').checked; } }]);
+  if (r !== 'Yes') return;
+  await each(id => api('DELETE', `/api/downloads/${id}?file=${files ? 1 : 0}`)); sel.clear();
+}
+$('#bDelete').onclick = () => deleteSelected();
+
+function propertiesDialog(d) {
+  return modal('File properties', `
+    <div class="row"><label>Address</label><input id="pUrl" value="${esc(d.url)}"></div>
+    <div class="row"><label>Save to</label><input id="pDir" value="${esc(d.saveDir)}"></div>
+    <div class="row"><label>File name</label><input id="pName" value="${esc(d.fileName)}"></div>
+    <div class="row"><label>Description</label><input id="pDesc" value="${esc(d.description)}"></div>
+    <div class="row"><label>Referer</label><input id="pRef" value="${esc(d.referer || '')}"></div>
+    <div class="row"><label>Login / password</label><span style="display:flex;gap:6px"><input id="pUser"><input id="pPass" type="password"></span></div>
+    <div class="hint">Status: ${esc(d.status)} · Size: ${fmtB(d.size)} · Last try: ${fmtD(d.lastTry)} ${d.error ? '· Result: ' + esc(d.error) : ''}</div>`,
+    [{ label: 'Cancel' }, { label: 'OK', primary: true, fn: async dlg => {
+      const v = id => dlg.querySelector(id).value;
+      const patch = { url: v('#pUrl'), saveDir: v('#pDir'), fileName: v('#pName'), description: v('#pDesc'), referer: v('#pRef') };
+      if (v('#pUser')) { patch.username = v('#pUser'); patch.password = v('#pPass'); }
+      try { await api('PATCH', `/api/downloads/${d.id}`, patch); } catch { return false; }
+    } }]);
+}
+// ---- find (Ctrl-F, F3) ----
+function setFind() { find.text = $('#fText').value; find.scope = $('#fScope').value; find.cs = $('#fCase').checked; find.whole = $('#fWhole').checked; find.pos = -1; renderRows(); }
+['fText', 'fScope', 'fCase', 'fWhole'].forEach(i => $('#' + i).addEventListener('input', setFind));
+function findNext() { const l = visible(); if (!l.length) return; find.pos = (find.pos + 1) % l.length; sel = new Set([l[find.pos].id]); renderAll(); document.querySelector('tr.hit')?.scrollIntoView({ block: 'nearest' }); }
+$('#fNext').onclick = findNext;
+$('#fClose').onclick = () => { $('#findbar').classList.remove('on'); $('#fText').value = ''; setFind(); };
+document.addEventListener('keydown', e => {
+  if (document.querySelector('dialog[open]')) return;
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') { e.preventDefault(); $('#findbar').classList.add('on'); $('#fText').focus(); }
+  else if (e.key === 'F3') { e.preventDefault(); findNext(); }
+  else if (e.key === 'Delete' && sel.size && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) deleteSelected();
+});
+
+// ---- add URL ----
+const fAdd = $('#fAdd');
+async function openAdd(prefill) {
+  fAdd.reset(); $('#probeInfo').textContent = ''; $('#zipList').textContent = '';
+  fAdd.elements.category.innerHTML = '<option value="">Automatic</option>' + S.categories.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+  if (prefill) fAdd.elements.url.value = prefill;
+  else { const t = await clipboardUrl(); if (t) fAdd.elements.url.value = t; }
+  $('#aLater').textContent = S.settings.addOnly ? 'Add to queue' : 'Download later';
+  $('#dAdd').showModal();
+  fAdd.elements.url.focus(); fAdd.elements.url.select(); // a pasted link is selected: typing replaces it
+}
+$('#bAdd').onclick = () => openAdd();
+const addBody = later => {
+  const f = Object.fromEntries(new FormData(fAdd)); const urls = f.url.split(/\s+/).filter(Boolean);
+  if (!$('#useAuth').checked) { delete f.username; delete f.password; }
+  f.rememberPath = !!f.rememberPath;
+  Object.keys(f).forEach(k => f[k] === '' && delete f[k]); delete f.url;
+  return { ...f, urls, startNow: !later, queue: later ? 'main' : null };
+};
+$('#aCancel').onclick = () => $('#dAdd').close();
+$('#aProbe').onclick = async () => {
+  const url = fAdd.elements.url.value.trim().split(/\s+/)[0]; if (!url) return;
+  $('#probeInfo').textContent = 'Checking…';
+  try { const p = await api('POST', '/api/probe', { url, username: fAdd.elements.username.value, password: fAdd.elements.password.value, referer: fAdd.elements.referer.value }); $('#probeInfo').textContent = `${p.fileName} · ${fmtB(p.size)} · resume ${p.resumable ? 'supported' : 'not supported'} · → ${p.saveDir}`; } catch { $('#probeInfo').textContent = ''; }
+};
+$('#aPreview').onclick = async () => {
+  const url = fAdd.elements.url.value.trim().split(/\s+/)[0]; if (!url) return;
+  $('#zipList').textContent = 'Reading archive directory…';
+  try {
+    const z = await api('POST', '/api/preview-zip', { url, username: fAdd.elements.username.value, password: fAdd.elements.password.value, referer: fAdd.elements.referer.value });
+    $('#zipList').textContent = '';
+    z.files.slice(0, 300).forEach(f => { const d = document.createElement('div'); d.textContent = `${f.name}  (${fmtB(f.size)})${f.encrypted ? ' 🔒' : ''}`; $('#zipList').append(d); });
+    if (z.count > 300) $('#zipList').append(`… and ${z.count - 300} more`);
+  } catch { $('#zipList').textContent = ''; }
+};
+$('#aLater').onclick = async () => { if (!fAdd.reportValidity()) return; const r = await api('POST', '/api/downloads', addBody(true)); $('#dAdd').close(); notifyDup(r); };
+fAdd.onsubmit = async e => { e.preventDefault(); const r = await api('POST', '/api/downloads', addBody(false)); $('#dAdd').close(); notifyDup(r); };
+// ---- "Duplicate download link": what to do when a link is already in the download list ----
+const dupStatus = d => d.status === 'complete' ? 'Complete' : d.status === 'downloading' ? 'Downloading' + (d.size ? ' (' + Math.floor(d.done / d.size * 100) + '%)' : '') : d.status === 'error' ? 'Error' : d.status === 'paused' ? 'Stopped' + (d.size ? ' (' + Math.floor(d.done / d.size * 100) + '%)' : '') : d.status === 'queued' ? 'Waiting' : d.status;
+/** Resolves to { policy: 'number' | 'overwrite' | 'resume' } or null when cancelled. Also remembers the choice when asked to. */
+function askDuplicate(existing) {
+  const list = existing.filter(Boolean); if (!list.length) return Promise.resolve(null);
+  const one = list[0], done = one.status === 'complete';
+  const dot = one.fileName.lastIndexOf('.'), numbered = dot > 0 ? one.fileName.slice(0, dot) + '_2' + one.fileName.slice(dot) : one.fileName + '_2';
+  const detail = list.length === 1
+    ? `<div style="border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:grid;gap:3px">
+         <div><b>${esc(one.fileName)}</b></div>
+         <div class="hint" id="dupWhere">${esc(one.saveDir)}</div>
+         <div class="hint">Status: ${esc(dupStatus(one))}${one.size != null ? ' · ' + fmtB(one.size) : ''}${one.added ? ' · added ' + esc(fmtD(one.added)) : ''}</div></div>`
+    : `<div style="border:1px solid var(--line);border-radius:8px;padding:8px 10px" class="hint">${list.slice(0, 4).map(x => esc(x.fileName)).join('<br>')}${list.length > 4 ? '<br>… and ' + (list.length - 4) + ' more' : ''}</div>`;
+  let chosen = null;
+  return modal('Duplicate download link',
+    `<div>${list.length === 1 ? 'This link is already in your download list.' : list.length + ' of these links are already in your download list.'} What do you want to do?</div>${detail}
+     <label><input type="radio" name="dupc" value="number" checked> Add the duplicate with a numbered file name${list.length === 1 ? ' (<i>' + esc(numbered) + '</i>)' : ''}</label>
+     <label><input type="radio" name="dupc" value="overwrite"> Add the duplicate and overwrite the existing file</label>
+     <label><input type="radio" name="dupc" value="resume"> ${done ? 'Keep the existing file and do not download it again' : 'Resume the existing download'}</label>
+     <label><input type="checkbox" id="dupRem"> Do not ask again: always do this (change in Options → Downloads)</label>`,
+    [{ label: 'Cancel' }, { label: 'OK', primary: true, fn: async d => {
+      const policy = d.querySelector('[name=dupc]:checked').value;
+      chosen = { policy };
+      if (d.querySelector('#dupRem').checked) await api('PUT', '/api/settings', { ...S.settings, duplicatePolicy: policy });
+    } }]).then(() => chosen);
+}
+async function notifyDup(r) {
+  const l = Array.isArray(r) ? r : [r]; const dups = l.filter(x => x.duplicate && !x.existing);
+  if (!dups.length) return;
+  const ans = await askDuplicate(dups);
+  if (!ans) return;
+  await api('POST', '/api/downloads', { urls: dups.map(x => x.url), duplicatePolicy: ans.policy, startNow: true, queue: null });
+}
+
+// ---- batch download ----
+function batchDialog(prefill = '') {
+  modal('Batch download', `<div class="hint">Add a group of sequential files like img001.jpg … img100.jpg. Use * in the address, e.g. http://host/pictures/img*.jpg</div>
+    <div class="row"><label>Address</label><input id="bUrl" value="${esc(prefill)}"></div>
+    <div class="row"><label>Replace * with</label><select id="bMode"><option value="numbers">Numbers</option><option value="letters">Letters</option></select></div>
+    <div class="row"><label>From / To / Width</label><span style="display:flex;gap:6px"><input id="bFrom" value="1"><input id="bTo" value="10"><input id="bWidth" type="number" min="1" max="10" value="1"></span></div>
+    <div class="row chk"><input type="checkbox" id="bAuth"><label for="bAuth">Use authorization</label></div>
+    <div class="row"><label>Login / password</label><span style="display:flex;gap:6px"><input id="bUser"><input id="bPass" type="password"></span></div>
+    <div id="bInfo" class="hint"></div>`,
+    [{ label: 'Preview', fn: async d => { try { const p = await api('POST', '/api/batch/preview', batchBody(d)); d.querySelector('#bInfo').textContent = `${p.count} files: ${p.first} , ${p.second || ''} … ${p.last}`; } catch { /* toast shown */ } return false; } },
+     { label: 'Cancel' },
+     { label: 'OK', primary: true, fn: async d => { try { const r = await api('POST', '/api/batch/add', { ...batchBody(d), queue: 'main' }); toast(`${r.length} files added to the queue`); } catch { return false; } } }]);
+}
+function batchBody(d) {
+  const v = id => d.querySelector(id).value, mode = v('#bMode');
+  const o = { url: v('#bUrl').trim(), mode, from: mode === 'numbers' ? +v('#bFrom') : v('#bFrom'), to: mode === 'numbers' ? +v('#bTo') : v('#bTo'), width: +v('#bWidth') || 1 };
+  if (d.querySelector('#bAuth').checked) { o.username = v('#bUser'); o.password = v('#bPass'); }
+  return o;
+}
+
+// ---- export / import ----
+function exportDialog() {
+  modal('Export download list', `<label><input type="radio" name="xs" value="queue" checked> Export download queue</label>
+    <label><input type="radio" name="xs" value="selected"> Export selected files (${sel.size})</label>
+    <label><input type="radio" name="xs" value="all"> Export all files</label>
+    <div class="row"><label>Format</label><select id="xf"><option value="ef2">Export file (.ef2)</option><option value="ief">Export file (.ief)</option><option value="json">Advance Download Manager export file (.sgx)</option><option value="text">Text file (links only)</option></select></div>
+    <label><input type="checkbox" id="xc"> Include cookies in .ef2 / .ief files (session secrets - only for your own import)</label><div class="hint">Passwords are never exported.</div>`,
+    [{ label: 'Cancel' }, { label: 'OK', primary: true, fn: async d => {
+      const scope = d.querySelector('[name=xs]:checked').value, format = d.querySelector('#xf').value;
+      const r = await fetch(`/api/export?scope=${scope}&format=${format}&cookies=${d.querySelector('#xc').checked ? 1 : 0}&ids=${[...sel].join(',')}`, { headers: { 'X-Token': TOKEN } });
+      const blob = await r.blob(), a = document.createElement('a');
+      a.href = URL.createObjectURL(blob); a.download = format === 'text' ? 'advance-download-manager-links.txt' : format === 'json' ? 'advance-download-manager-export.sgx' : 'advance-download-manager-export.' + format; a.click(); URL.revokeObjectURL(a.href);
+    } }]);
+}
+function importDialog() { $('#iText').value = ''; $('#dImp').showModal(); }
+$('#iCancel').onclick = () => $('#dImp').close();
+$('#iFile').onchange = async e => { $('#iText').value = await e.target.files[0].text(); };
+$('#iOk').onclick = async () => { const r = await api('POST', '/api/import', { text: $('#iText').value, queue: 'main' }); toast(`${r.added} link(s) added to the queue`); $('#dImp').close(); };
+
+// ---- Download All Links (collections sent by the browser extension) ----
+async function openCollect(id) {
+  const c = await api('GET', '/api/collect/' + id);
+  const isHtml = n => /\.(html?|php|aspx?|jsp)$/i.test(n) || !/\.[a-z0-9]{1,5}$/i.test(n), isImg = n => /\.(jpe?g|png|gif|bmp|webp|svg|ico)$/i.test(n);
+  const cats = S.categories.map(x => `<option value="${x.id}">${esc(x.name)}</option>`).join('');
+  const render = d => {
+    const hideHtml = d.querySelector('#cHtml').checked, hideImg = d.querySelector('#cImg').checked, hideRep = d.querySelector('#cRep').checked;
+    const seen = new Set(), pat = d.querySelector('#cPat').value;
+    d._rows = c.items.filter(i => !(hideHtml && isHtml(i.name)) && !(hideImg && isImg(i.name)) && !(hideRep && (seen.has(i.name) || !seen.add(i.name)))).map(i => {
+      const ext = (i.name.match(/\.[^.]+$/) || [''])[0], base = i.name.slice(0, i.name.length - ext.length);
+      return { ...i, fileName: pat.includes('*') ? pat.replace('*', base) + (pat.includes('.') ? '' : ext) : i.name };
+    });
+    d.querySelector('#cList').innerHTML = d._rows.map((r, k) => `<tr><td style="width:24px"><input type="checkbox" data-k="${k}" checked></td><td title="${esc(r.url)}">${esc(r.fileName)}</td><td class="hint">${esc(r.text)}</td></tr>`).join('');
+  };
+  const r = await new Promise(resolve => {
+    const dlg = document.createElement('dialog');
+    dlg.innerHTML = `<div class="box"><h3>Download all links (${c.items.length})</h3><div class="hint">${esc(c.title || c.referer)}</div>
+      <div class="grid"><table><tbody id="cList"></tbody></table></div>
+      <label><input type="checkbox" id="cHtml" checked> Hide HTML files</label><label><input type="checkbox" id="cImg"> Hide images located on this web page</label><label><input type="checkbox" id="cRep" checked> Hide repeated files</label>
+      <div class="row"><label>Rename pattern (*)</label><input id="cPat" placeholder="e.g. holiday_* (optional)"></div>
+      <div class="row"><label>Save to</label><select id="cWhere"><option value="auto">Every file to the directory of its category</option><option value="cat">All files to one category</option><option value="dir">All files to one directory</option></select></div>
+      <div class="row"><label>Category / folder</label><span style="display:flex;gap:6px"><select id="cCat">${cats}</select><input id="cDir" placeholder="C:\\folder"></span></div>
+      <label><input type="checkbox" id="cDesc"> Use link texts as download descriptions</label>
+      <div class="foot"><button id="cAll">Check all</button><button id="cNone">Uncheck all</button><button id="cCancel">Cancel</button><button class="primary" id="cOk">OK</button></div></div>`;
+    $('#dyn').append(dlg); dlg.showModal(); render(dlg);
+    for (const i of ['#cHtml', '#cImg', '#cRep']) dlg.querySelector(i).onchange = () => render(dlg);
+    dlg.querySelector('#cPat').oninput = () => render(dlg);
+    dlg.querySelector('#cAll').onclick = () => dlg.querySelectorAll('#cList input').forEach(i => i.checked = true);
+    dlg.querySelector('#cNone').onclick = () => dlg.querySelectorAll('#cList input').forEach(i => i.checked = false);
+    dlg.querySelector('#cCancel').onclick = () => { dlg.close(); resolve(null); };
+    dlg.querySelector('#cOk').onclick = () => { resolve(dlg); };
+  });
+  if (!r) return;
+  const items = [...r.querySelectorAll('#cList input:checked')].map(i => r._rows[+i.dataset.k]).map(x => ({ url: x.url, fileName: x.fileName !== x.name ? x.fileName : undefined, description: r.querySelector('#cDesc').checked ? x.text : '' }));
+  const where = r.querySelector('#cWhere').value;
+  const res = await api('POST', `/api/collect/${id}/add`, { items, queue: 'main', category: where === 'cat' ? r.querySelector('#cCat').value : undefined, saveDir: where === 'dir' ? r.querySelector('#cDir').value : undefined });
+  r.close(); r.remove(); toast(`${res.added} file(s) added to the queue`);
+}
+if (location.hash.startsWith('#collect=')) { const id = location.hash.slice(9); history.replaceState(null, '', location.pathname); setTimeout(() => openCollect(id).catch(() => {}), 400); }
+
+// ---- Options ----
+const lines = a => (a || []).join('\n'), words = a => (a || []).join(' ');
+const px = (k, p) => `<div class="row"><label>${k}</label><span style="display:flex;gap:6px"><input id="x_${k}_h" placeholder="server" value="${esc(p?.host)}"><input id="x_${k}_p" type="number" style="width:90px" value="${p?.port ?? ''}"><input id="x_${k}_u" placeholder="user" value="${esc(p?.user)}"><input id="x_${k}_w" type="password" placeholder="password" value="${esc(p?.pass)}"></span></div>`;
+// Set these when the extension is published in the browser stores; the buttons then appear in Options > Browser.
+const STORE_LINKS = { chrome: '', edge: '', firefox: '' };
+const TABS = {
+  Connection: s => `<fieldset><legend>⚡ Turbo mode</legend>
+      <div class="row chk"><input type="checkbox" id="o_turbo" ${s.turbo ? 'checked' : ''}><label for="o_turbo">Turbo mode on (same as the Turbo button)</label></div>
+      <div class="row"><label>Connections per download in Turbo mode</label><input id="o_turboConns" type="number" min="2" max="64" value="${s.turboConnections}"></div>
+      <div class="hint">Turbo ignores the speed limiter and the quota pause, opens all connections at once (no ramp-up) and backs off by itself if a server refuses them. It cannot exceed your internet speed; some servers block clients that open many connections.</div>
+    </fieldset>
+    <div class="row chk"><input type="checkbox" id="o_autotune" ${s.autoTune !== false ? 'checked' : ''}><label for="o_autotune"><b>Auto-tune the number of connections</b> (recommended): measure the speed and use as many connections as actually help, up to the limits below</label></div>
+    <div class="row"><label>Default max. connections</label><input id="o_maxConnections" type="number" min="1" max="32" value="${s.maxConnections}"></div>
+    <div class="hint">The upper limit for normal mode (Turbo has its own above). With auto-tune on, the app starts with 8 and only goes higher while the speed really improves, or lower when more connections make it worse. Some servers block clients that open many connections.</div>
+    <div class="row"><label>Server exceptions</label><textarea id="o_ex" rows="3" placeholder="*.example.com=1">${esc((s.exceptions || []).map(e => e.pattern + '=' + e.connections).join('\n'))}</textarea></div>
+    <fieldset><legend>Speed Limiter</legend>
+      <div class="row chk"><input type="checkbox" id="o_lon" ${s.limiterOn ? 'checked' : ''}><label for="o_lon">Speed Limiter is on</label></div>
+      <div class="row"><label>Max speed per download queue (KB/s)</label><input id="o_speedKB" type="number" min="0" value="${Math.round(s.speedLimit / 1024)}"></div>
+      <div class="row chk"><input type="checkbox" id="o_lstart" ${s.limiterOnStartup ? 'checked' : ''}><label for="o_lstart">Always turn on the Speed Limiter on startup</label></div>
+      <div class="hint">Servers may break the connection when the speed is too limited; avoid limiting servers without resume support.</div></fieldset>
+    <fieldset><legend>Download limits</legend>
+      <div class="row chk"><input type="checkbox" id="o_qe" ${s.quota.enabled ? 'checked' : ''}><label for="o_qe">Download no more than</label></div>
+      <div class="row"><label>MBytes every N hours</label><span style="display:flex;gap:6px"><input id="o_qmb" type="number" value="${Math.round(s.quota.bytes / 1048576)}"><input id="o_qh" type="number" step="0.5" value="${s.quota.windowMs / 3600000}"></span></div></fieldset>
+    <div class="row"><label>Retry interval (s)</label><input id="o_retry" type="number" min="1" value="${s.retryIntervalMs / 1000}"></div>
+    <div class="row chk"><input type="checkbox" id="o_ign" ${s.ignoreModTime ? 'checked' : ''}><label for="o_ign">Ignore file modification time changes when resuming</label></div>`,
+  'Save To': s => `<div class="hint">Categories: name, file types, optional sites (the category only matches files from those sites), folder.</div>` +
+    S.categories.map((c, i) => `<fieldset><legend>${esc(c.name)}</legend><div class="row"><label>Folder</label><input data-cat="${i}" value="${esc(c.dir)}"></div><div class="row"><label>File types</label><input data-catx="${i}" value="${esc(c.exts.join(' '))}"></div><div class="row"><label>Only from sites</label><input data-cats="${i}" value="${esc((c.sites || []).join(' '))}" placeholder="*.example.com (optional)"></div>${c.id === 'general' ? '' : `<button data-catdel="${i}" type="button">Delete category</button>`}</fieldset>`).join('') +
+    `<button id="o_addcat" type="button">Add category</button>
+    <div class="row"><label>Temporary directory</label><input id="o_tmp" value="${esc(s.tempDir)}" placeholder="next to the destination"></div>
+    <div class="row chk"><input type="checkbox" id="o_date" ${s.setFileDate ? 'checked' : ''}><label for="o_date">Set file date as provided by the server</label></div>`,
+  Proxy: s => { const p = s.proxy; return `<div class="row"><label>Mode</label><span><label><input type="radio" name="pm" value="none" ${p.mode === 'none' ? 'checked' : ''}> No proxy/socks</label> <label><input type="radio" name="pm" value="system" ${p.mode === 'system' ? 'checked' : ''}> Use system settings</label> <label><input type="radio" name="pm" value="pac" ${p.mode === 'pac' ? 'checked' : ''}> Automatic configuration script</label> <label><input type="radio" name="pm" value="manual" ${p.mode === 'manual' ? 'checked' : ''}> Manual</label></span></div>
+    <div class="row"><label>Script address (PAC)</label><span style="display:flex;gap:6px"><input id="x_pac" value="${esc(p.pacUrl)}" placeholder="http://wpad/proxy.pac or a local file path"><button id="o_pactest" type="button">Test…</button></span></div>
+    <div class="hint">Automatic configuration scripts (PAC) are not supported. <button id="o_getsys" type="button">Get System</button></div>
+    ${px('http', p.http)}${px('https', p.https)}${px('ftp', p.ftp)}
+    <fieldset><legend>Socks (used only for protocols without their own proxy)</legend>${px('socks', p.socks)}
+      <div class="row"><label>Version</label><select id="x_ver"><option value="5" ${p.socks.version !== 4 ? 'selected' : ''}>Socks 5</option><option value="4" ${p.socks.version === 4 ? 'selected' : ''}>Socks 4</option></select></div></fieldset>
+    <div class="row"><label>No proxy for</label><input id="o_pb" value="${esc((p.bypass || []).join(' '))}" placeholder="*.local 10.*  (separate with spaces)"></div>`; },
+  'File Types': s => `<div class="row"><label>Automatically start downloading these types</label><textarea id="o_ft" rows="3">${esc(words(s.fileTypes))}</textarea></div>
+    <div class="row"><label>MIME types treated as downloads</label><textarea id="o_mt" rows="3">${esc(words(s.mediaTypes))}</textarea></div>
+    <div class="row"><label>Don't start automatically from sites</label><textarea id="o_ns" rows="2" placeholder="*.example.com (separate with spaces)">${esc(words(s.noTakeoverSites))}</textarea></div>
+    <div class="row"><label>Don't start from addresses</label><textarea id="o_ea" rows="3" placeholder="one wildcard pattern per line">${esc(lines(s.excludeAddresses))}</textarea></div>
+    <button id="o_deftypes" type="button">Default</button>`,
+  'Site Logins': s => `<div class="hint">One per line: host-pattern, user, password</div><textarea id="o_sl" rows="6">${esc((s.siteLogins || []).map(l => [l.pattern, l.user, l.pass].join(', ')).join('\n'))}</textarea>`,
+  'Dial Up / VPN': s => { const d = s.dialup; return `<div class="row chk"><input type="checkbox" id="d_on" ${d.enabled ? 'checked' : ''}><label for="d_on">Use Windows Dial Up / VPN networking (connect automatically when a download needs the Internet)</label></div>
+    <div class="row"><label>Connection</label><span style="display:flex;gap:6px"><select id="d_sel"><option value="${esc(d.entry)}">${esc(d.entry || '(loading phone book…)')}</option></select><button id="d_conn" type="button">Connect now</button></span></div>
+    <div class="row"><label>User name / password</label><span style="display:flex;gap:6px"><input id="d_user" value="${esc(d.user)}"><input id="d_pass" type="password" value="${esc(d.pass)}"></span></div>
+    <div class="hint">Leave the user name empty to use the credentials saved in Windows for this connection (recommended: a password given here is visible in the process list while dialling).</div>
+    <div class="row"><label>Redial attempts</label><input id="d_att" type="number" min="1" max="20" value="${d.redialAttempts}"></div>
+    <div class="row"><label>Seconds between attempts</label><input id="d_sec" type="number" min="1" value="${d.redialSeconds}"></div>`; },
+  Downloads: s => `<div class="row chk"><input type="checkbox" id="o_confirm" ${s.confirmDownloads !== false ? 'checked' : ''}><label for="o_confirm">Show the <b>Download File Info</b> dialog (file name, save location, category) before starting downloads captured from the browser, the clipboard or other programs</label></div>
+    <div class="row chk"><input type="checkbox" id="o_addonly" ${s.addOnly ? 'checked' : ''}><label for="o_addonly">Do not start downloading, only add files to the queue</label></div>
+    <div class="row"><label>If a duplicate link is added</label><select id="o_dup">${[['ask', 'Ask me'], ['number', 'Add with a numbered name'], ['overwrite', 'Overwrite the existing file'], ['resume', 'Resume / show the existing one']].map(([v, t]) => `<option value="${v}" ${s.duplicatePolicy === v ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
+    <div class="row"><label>User-Agent (manual downloads)</label><input id="o_ua" value="${esc(s.userAgent)}" placeholder="default"></div>
+    <fieldset><legend>Virus checking</legend><div class="row"><label>Scanner program</label><input id="o_cmd" value="${esc(s.onCompleteCommand)}" placeholder="C:\\path\\scanner.exe"></div>
+      <div class="row"><label>Command line parameters</label><input id="o_args" value="${esc(s.onCompleteArgs)}" placeholder="/scan {file}   (path appended if no {file})"></div></fieldset>`,
+  General: s => `<div class="row chk"><input type="checkbox" id="o_upd" ${s.updates && s.updates.check === false ? '' : 'checked'}><label for="o_upd">Check for new versions automatically (once a day; nothing is installed without your click)</label></div>
+    <div class="row chk"><input type="checkbox" id="o_tray" ${s.trayIcon ? 'checked' : ''}><label for="o_tray">Show the notification-area (tray) icon on Windows (applies at next start)</label></div>
+    <div class="row chk"><input type="checkbox" id="o_auto"><label for="o_auto">Launch Advance Download Manager on Windows startup</label></div>
+    <div class="row chk"><input type="checkbox" id="o_clip" ${s.clipboardMonitor ? 'checked' : ''}><label for="o_clip">Automatically start downloading URLs placed on the clipboard (while this page is open)</label></div>
+    <div class="row chk"><input type="checkbox" id="o_sc" ${s.sounds?.complete ? 'checked' : ''}><label for="o_sc">Sound on download complete</label></div>
+    <div class="row chk"><input type="checkbox" id="o_se" ${s.sounds?.error ? 'checked' : ''}><label for="o_se">Sound on error</label></div>
+    <fieldset><legend>Browser integration</legend>
+      <div class="hint">Load the <code>extension/</code> folder in Chrome/Edge (chrome://extensions → Developer mode → Load unpacked), then paste these into its Options:</div>
+      <div class="row"><label>Port</label><input readonly value="${location.port}" onfocus="this.select()"></div>
+      <div class="row"><label>Token</label><input readonly value="${TOKEN}" onfocus="this.select()"></div></fieldset>`,
+  Video: s => `<fieldset><legend>Video engine (yt-dlp + FFmpeg)</legend>
+      <div id="vToolsInfo" class="hint">Checking…</div>
+      <div id="vtBar"></div>
+      <div class="row" style="grid-template-columns:auto auto auto 1fr;gap:8px"><button type="button" id="vtInstall">Install / repair both</button><button type="button" id="vtUpdate">Update yt-dlp now</button><button type="button" id="vtAdd">Download a video from a page address…</button><span></span></div>
+      <div class="hint">Videos from YouTube, Facebook, Instagram, TikTok and more than a thousand other sites are read by <b>yt-dlp</b> and joined with <b>FFmpeg</b>. Both are free and open source, downloaded once from their official sites and verified against their published checksums. Sites change often, so yt-dlp is updated automatically every few days.</div>
+    </fieldset>
+    <div class="row"><label>Preferred quality</label><select id="o_vq">${[[0, 'Best available'], [2160, 'Up to 4K (2160p)'], [1440, 'Up to 1440p'], [1080, 'Up to 1080p'], [720, 'Up to 720p'], [480, 'Up to 480p'], [360, 'Up to 360p']].map(([v, l]) => `<option value="${v}" ${(s.video || {}).maxHeight === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+    <div class="row"><label>Use the login of this browser</label><select id="o_vcb">${['', 'edge', 'chrome', 'firefox'].map(b => '<option value="' + b + '"' + (((s.video || {}).cookiesBrowser || '') === b ? ' selected' : '') + '>' + (b || 'none (the extension passes it)') + '</option>').join('')}</select></div>
+    <div class="hint">Fixes "Sign in to confirm you're not a bot" and many HTTP 429 errors when you paste a YouTube link into the app. Firefox works reliably. Chrome and Edge often refuse on Windows (they encrypt it); with those, use the browser extension's Download button instead — it passes your login itself.</div>
+    <div class="row"><label>Parallel parts per video</label><input id="o_vfrag" type="number" min="1" max="32" value="${(s.video || {}).concurrentFragments || 8}"></div>
+    <div class="row chk"><input type="checkbox" id="o_vupd" ${(s.video || {}).autoUpdate !== false ? 'checked' : ''}><label for="o_vupd">Update the video engine automatically</label></div>
+    <div class="row"><label>yt-dlp program</label><input id="o_vyt" value="${esc((s.video || {}).ytdlpPath || '')}" data-orig="${esc((s.video || {}).ytdlpPath || '')}" placeholder="Automatic (installed by the app, or found on PATH)"></div>
+    <div class="row"><label>FFmpeg program</label><input id="o_vff" value="${esc((s.video || {}).ffmpegPath || '')}" data-orig="${esc((s.video || {}).ffmpegPath || '')}" placeholder="Automatic"></div>
+    <div class="hint">Only download videos you have the right to download; the terms of some sites forbid it. DRM-protected streams and live streams are not supported.</div>`,
+  Browser: s => `<fieldset><legend>Browser extension (Chrome, Edge, Firefox)</legend>
+      <div class="hint">Browsers connected to this app:</div>
+      <div id="pairList">${(s.pairedExtensions || []).length ? s.pairedExtensions.map(p => `<div class="row" style="align-items:center"><span style="flex:1">● ${esc(p.browser || 'Browser')} — ${esc(p.name)} <span class="hint">(${esc(new Date(p.since).toLocaleDateString())})</span></span><button data-revoke="${esc(p.origin)}">Remove</button></div>`).join('') : '<div class="hint">None yet.</div>'}</div>
+      <ol class="hint" style="margin:8px 0 8px 18px;padding:0">
+        <li>Install the extension in your browser (store button below, or <i>Load unpacked</i> from the extension folder).</li>
+        <li>The extension finds this app by itself. When it asks, press <b>Allow</b> in the window that appears here. No token to copy.</li>
+      </ol>
+      <div class="row" style="flex-wrap:wrap;gap:6px">
+        <button data-open="folder">Open extension folder</button>
+        <button data-open="chrome">Chrome: extensions page</button>
+        <button data-open="edge">Edge: extensions page</button>
+        <button data-open="firefox">Firefox: add-ons debugging</button>
+        ${Object.entries(STORE_LINKS).filter(([, u]) => u).map(([k, u]) => `<button data-store="${esc(u)}">Get it from the ${esc(k)} store</button>`).join('')}
+      </div>
+      <div class="hint">Browsers only install extensions silently when they come from their own store, so until the extension is listed there it must be loaded once by hand.</div>
+    </fieldset>
+    <fieldset><legend>Capture all downloads on this PC (Windows)</legend>
+      <div class="row chk"><input type="checkbox" id="o_syscap" data-was="${s.systemCapture ? 'true' : 'false'}" ${s.systemCapture ? 'checked' : ''}><label for="o_syscap">Catch plain-HTTP downloads from every program, not only browsers</label></div>
+      <div id="sysCapState" class="hint">Checking…</div>
+      <div class="hint">Uses a proxy script that sends only http:// traffic to this app and falls back to a direct connection if the app is closed, so the internet never breaks. HTTPS downloads from other programs cannot be captured this way (browsers are covered by the extension). The previous proxy-script setting is restored when you switch this off or quit the app. Corporate proxy setups may stop working while it is on.</div>
+    </fieldset>
+    <fieldset><legend>Clipboard</legend>
+      <div class="row chk"><input type="checkbox" id="o_clipoffer" ${s.clipboardOffer !== false ? 'checked' : ''}><label for="o_clipoffer">Offer to download links I copy (a notification appears; nothing starts until you click it) — native app</label></div>
+    </fieldset>`,
+};
+let optTab = 'Connection', draft;
+function renderOpts() {
+  $('#optTabs').innerHTML = Object.keys(TABS).map(t => `<button class="${t === optTab ? 'on' : ''}" data-t="${t}">${t}</button>`).join('');
+  $('#optBody').innerHTML = TABS[optTab](draft);
+  if (optTab === 'Browser') browserTabInit();
+  if (optTab === 'Video') videoTabInit();
+  const g = id => document.getElementById(id);
+  if (g('o_addcat')) g('o_addcat').onclick = async () => { collectOpts(); const n = await uiPrompt('Category name'); if (n) { S.categories.push({ id: n.toLowerCase().replace(/\W+/g, '-'), name: n, exts: [], sites: [], dir: S.categories[0].dir.replace(/[^\\/]+$/, n) }); renderOpts(); } };
+  document.querySelectorAll('[data-catdel]').forEach(b => b.onclick = () => { collectOpts(); S.categories.splice(+b.dataset.catdel, 1); renderOpts(); });
+  if (g('o_deftypes')) g('o_deftypes').onclick = async () => { const d = await api('GET', '/api/defaults'); g('o_ft').value = words(d.fileTypes); g('o_mt').value = words(d.mediaTypes); g('o_ea').value = lines(d.excludeAddresses); };
+  if (g('o_pactest')) g('o_pactest').onclick = async () => { const u = await uiPrompt('Address to test (for example http://example.com/file.zip)', 'http://'); if (!u) return; try { const r = await api('POST', '/api/pac/test', { pacUrl: g('x_pac').value.trim(), url: u }); toast('PAC result: ' + r.result); } catch { /* error already shown */ } };
+  if (g('d_sel')) api('GET', '/api/dialup/entries').then(r => { const cur = draft.dialup.entry; const el = g('d_sel'); if (!el) return; el.innerHTML = '<option value="">(none)</option>' + r.entries.map(n => `<option ${n === cur ? 'selected' : ''}>${esc(n)}</option>`).join(''); }, () => {});
+  if (g('d_conn')) g('d_conn').onclick = async () => { collectOpts(); await api('PUT', '/api/settings', draft); toast('Dialling…'); try { await api('POST', '/api/dialup/connect'); toast('Connected'); } catch { /* error already shown */ } };
+  if (g('o_getsys')) g('o_getsys').onclick = async () => { const s = await api('GET', '/api/system-proxy'); const set = (k, v) => { if (!v) return; g(`x_${k}_h`).value = v.host; g(`x_${k}_p`).value = v.port; }; ['http', 'https', 'ftp', 'socks'].forEach(k => set(k, s[k])); toast(Object.keys(s).length ? 'System proxy settings loaded' : 'No system proxy configured'); };
+  if (g('o_auto')) api('GET', '/api/autostart').then(r => { const el = g('o_auto'); if (el) { el.checked = r.enabled; el.dataset.was = r.enabled; } }, () => {});
+}
+function collectOpts() {
+  const g = id => document.getElementById(id), s = draft;
+  if (g('o_autotune')) s.autoTune = g('o_autotune').checked;
+  if (g('o_turbo')) { s.turbo = g('o_turbo').checked; s.turboConnections = +g('o_turboConns').value || 32; }
+  if (g('o_maxConnections')) {
+    s.maxConnections = +g('o_maxConnections').value; s.limiterOn = g('o_lon').checked; s.speedLimit = +g('o_speedKB').value * 1024; s.limiterOnStartup = g('o_lstart').checked; s.retryIntervalMs = +g('o_retry').value * 1000; s.ignoreModTime = g('o_ign').checked;
+    s.quota = { enabled: g('o_qe').checked, bytes: +g('o_qmb').value * 1048576, windowMs: +g('o_qh').value * 3600000 };
+    s.exceptions = g('o_ex').value.split('\n').map(l => l.split('=')).filter(p => p[0].trim() && +p[1]).map(p => ({ pattern: p[0].trim(), connections: +p[1] }));
+  }
+  if (g('x_http_h')) {
+    const rd = k => ({ host: g(`x_${k}_h`).value.trim(), port: +g(`x_${k}_p`).value || 0, user: g(`x_${k}_u`).value, pass: g(`x_${k}_w`).value });
+    s.proxy = { mode: document.querySelector('[name=pm]:checked').value, pacUrl: g('x_pac').value.trim(), http: rd('http'), https: rd('https'), ftp: rd('ftp'), socks: { ...rd('socks'), version: +g('x_ver').value }, bypass: g('o_pb').value.split(/[\s,]+/).filter(Boolean) };
+  }
+  if (g('o_sl')) s.siteLogins = g('o_sl').value.split('\n').map(l => l.split(',').map(x => x.trim())).filter(p => p[0] && p[1]).map(p => ({ pattern: p[0], user: p[1], pass: p[2] || '' }));
+  if (g('o_ft')) { s.fileTypes = g('o_ft').value.split(/[\s,]+/).filter(Boolean).map(x => x.replace(/^\./, '').toLowerCase()); s.mediaTypes = g('o_mt').value.split(/\s+/).filter(Boolean); s.noTakeoverSites = g('o_ns').value.split(/\s+/).filter(Boolean); s.excludeAddresses = g('o_ea').value.split('\n').map(x => x.trim()).filter(Boolean); }
+  if (g('o_ua')) { s.userAgent = g('o_ua').value.trim(); s.onCompleteCommand = g('o_cmd').value.trim(); s.onCompleteArgs = g('o_args').value.trim(); s.addOnly = g('o_addonly').checked; s.duplicatePolicy = g('o_dup').value; }
+  if (g('o_tmp')) { s.tempDir = g('o_tmp').value.trim(); s.setFileDate = g('o_date').checked; }
+  if (g('o_confirm')) s.confirmDownloads = g('o_confirm').checked;
+  if (g('o_vq')) s.video = { ...(s.video || {}), maxHeight: +g('o_vq').value || 0, cookiesBrowser: g('o_vcb') ? g('o_vcb').value : '', concurrentFragments: Math.max(1, Math.min(32, +g('o_vfrag').value || 8)), autoUpdate: g('o_vupd').checked, ytdlpPath: g('o_vyt').value === g('o_vyt').dataset.orig ? (s.video || {}).ytdlpPath || '' : g('o_vyt').value.trim(), ffmpegPath: g('o_vff').value === g('o_vff').dataset.orig ? (s.video || {}).ffmpegPath || '' : g('o_vff').value.trim() }; // untouched paths are kept exactly as they were
+  if (g('o_syscap')) s._syscap = { want: g('o_syscap').checked, was: g('o_syscap').dataset.was === 'true' };
+  if (g('o_clipoffer')) s.clipboardOffer = g('o_clipoffer').checked;
+  if (g('o_auto')) s._auto = { want: g('o_auto').checked, was: g('o_auto').dataset.was === 'true' };
+  if (g('d_on')) s.dialup = { enabled: g('d_on').checked, entry: g('d_sel').value, user: g('d_user').value, pass: g('d_pass').value, redialAttempts: +g('d_att').value || 3, redialSeconds: +g('d_sec').value || 10 };
+  if (g('o_tray')) s.trayIcon = g('o_tray').checked;
+  if (g('o_upd')) s.updates = { ...(s.updates || {}), check: g('o_upd').checked };
+  if (g('o_clip')) { s.clipboardMonitor = g('o_clip').checked; s.sounds = { complete: g('o_sc').checked, error: g('o_se').checked }; }
+  document.querySelectorAll('[data-cat]').forEach(i => S.categories[+i.dataset.cat].dir = i.value.trim());
+  document.querySelectorAll('[data-catx]').forEach(i => S.categories[+i.dataset.catx].exts = i.value.split(/[\s,]+/).filter(Boolean).map(x => x.replace(/^\./, '').toLowerCase()));
+  document.querySelectorAll('[data-cats]').forEach(i => S.categories[+i.dataset.cats].sites = i.value.split(/[\s,]+/).filter(Boolean));
+}
+$('#optTabs').onclick = e => { if (e.target.dataset.t) { collectOpts(); optTab = e.target.dataset.t; renderOpts(); } };
+// called by the native host (installer: "Set up the browser extension")
+function openBrowserSetup() { openOptions(); optTab = 'Browser'; renderOpts(); }
+function openOptions() { draft = JSON.parse(JSON.stringify(S.settings)); optTab = 'Connection'; renderOpts(); $('#dOpts').showModal(); }
+$('#bOpts').onclick = openOptions;
+$('#oCancel').onclick = () => $('#dOpts').close();
+$('#oSave').onclick = async () => {
+  collectOpts();
+  const auto = draft._auto; delete draft._auto;
+  const syscap = draft._syscap; delete draft._syscap;
+  delete draft.pairedExtensions; delete draft.systemCapture; // managed by their own buttons
+  await api('PUT', '/api/settings', draft); await api('PUT', '/api/categories', S.categories);
+  if (auto && auto.want !== auto.was) await api('POST', '/api/autostart', { enabled: auto.want });
+  if (syscap && syscap.want !== syscap.was) { try { const r = await api('POST', '/api/system-capture', { enabled: syscap.want }); toast(r.enabled ? (r.active ? 'Capturing HTTP downloads on this PC' : 'Capture could not be switched on') : 'PC-wide capture is off'); } catch { /* toast shown by api() */ } }
+  $('#dOpts').close(); toast('Options saved');
+};
+
+// ---- scheduler ----
+let curQ = 'main';
+function renderQ() {
+  $('#qSel').innerHTML = S.queues.map(q => `<option value="${q.id}" ${q.id === curQ ? 'selected' : ''}>${esc(q.name)}${q.running ? ' (running)' : ''}</option>`).join('');
+  const q = S.queues.find(x => x.id === curQ) || S.queues[0]; curQ = q.id;
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const items = [...dl.values()].filter(d => d.queue === q.id);
+  $('#qBody').innerHTML = `<div class="row"><label>Name</label><input id="q_name" value="${esc(q.name)}"></div>
+   <div class="row"><label>Type</label><select id="q_type" ${q.id === 'main' || q.id === 'sync' ? 'disabled' : ''}><option value="download" ${q.type === 'download' ? 'selected' : ''}>One-time downloading</option><option value="sync" ${q.type === 'sync' ? 'selected' : ''}>Periodic synchronization</option></select></div>
+   <div class="row chk"><input type="checkbox" id="q_sch" ${q.scheduled ? 'checked' : ''}><label for="q_sch">Enable schedule (Advance Download Manager must be running at that time)</label></div>
+   <div class="row"><label>Start at / Stop at</label><span style="display:flex;gap:6px"><input id="q_start" type="time" value="${q.startAt}"><input id="q_stop" type="time" value="${q.stopAt}"></span></div>
+   <div class="row"><label>Days</label><span>${days.map((d, i) => `<label><input type="checkbox" class="q_day" value="${i}" ${q.days.includes(i) ? 'checked' : ''}> ${d}</label> `).join('')}</span></div>
+   <div class="row"><label>Sync every (min)</label><input id="q_per" type="number" min="0" value="${q.periodMinutes}"></div>
+   <div class="row"><label>Download N files at once</label><input id="q_par" type="number" min="1" max="8" value="${q.parallel}"></div>
+   <div class="row"><label>Max retries per file</label><input id="q_ret" type="number" min="0" value="${q.maxRetries}"></div>
+   <div class="hint">0 = retry forever, every ${S.settings.retryIntervalMs / 1000}s (default behaviour).</div>
+   <div class="row chk"><input type="checkbox" id="q_exit" ${q.onDone.exit ? 'checked' : ''}><label for="q_exit">Exit Advance Download Manager when done (after 10 s)</label></div>
+   <div class="row chk"><input type="checkbox" id="q_hang" ${q.onDone.hangup ? 'checked' : ''}><label for="q_hang">Hang up dial-up/VPN connection when done (rasdial /disconnect)</label></div>
+   <div class="row chk"><input type="checkbox" id="q_shut" ${q.onDone.shutdown ? 'checked' : ''}><label for="q_shut">Turn off computer when done (60 s delay)</label></div>
+   <div class="row chk"><input type="checkbox" id="q_force" ${q.onDone.force ? 'checked' : ''}><label for="q_force">Force processes to terminate (may lose data in other apps)</label></div>
+   <div class="row"><label>Open / run when done</label><input id="q_cmd" value="${esc(q.onDone.command)}" placeholder="C:\\path\\script.bat"></div>
+   <div class="hint">Files in queue (${items.length}): ${items.map(d => esc(d.fileName)).join(', ') || 'none'} – use the row menu (right click) to reorder.</div>`;
+}
+const readQ = () => { const q = S.queues.find(x => x.id === curQ); return { ...q, name: $('#q_name').value, type: $('#q_type').value, scheduled: $('#q_sch').checked, startAt: $('#q_start').value, stopAt: $('#q_stop').value,
+  days: [...document.querySelectorAll('.q_day')].filter(x => x.checked).map(x => +x.value), periodMinutes: +$('#q_per').value, parallel: +$('#q_par').value, maxRetries: +$('#q_ret').value,
+  onDone: { exit: $('#q_exit').checked, hangup: $('#q_hang').checked, shutdown: $('#q_shut').checked, force: $('#q_force').checked, command: $('#q_cmd').value.trim() } }; };
+const toggleTurbo = () => api('PUT', '/api/settings', { turbo: !S.settings.turbo }).then(() => toast(S.settings.turbo ? 'Turbo mode on' : 'Turbo mode off'));
+$('#bTurbo').onclick = toggleTurbo;
+$('#bSched').onclick = () => { curQ = filter.kind === 'queue' ? filter.id : 'main'; renderQ(); $('#dSched').showModal(); };
+$('#qSel').onchange = e => { curQ = e.target.value; renderQ(); };
+$('#qNew').onclick = async () => { const name = await uiPrompt('Enter a name for the new queue'); if (!name) return; const id = 'q' + Date.now(); await api('POST', '/api/queues', { id, name, type: 'download', parallel: 2, startAt: '', stopAt: '', days: [0, 1, 2, 3, 4, 5, 6], periodMinutes: 0, maxRetries: 0, onDone: { exit: false, shutdown: false, command: '' }, scheduled: false }); curQ = id; setTimeout(renderQ, 300); };
+$('#qDel').onclick = async () => { if (await uiConfirm('Delete this queue? Its files stay in the list.', 'Delete')) { await api('DELETE', '/api/queues/' + curQ); curQ = 'main'; setTimeout(renderQ, 300); } };
+$('#qSave').onclick = async () => { await api('POST', '/api/queues', readQ()); toast('Schedule saved'); };
+$('#qStartNow').onclick = async () => { await api('POST', '/api/queues', readQ()); await api('POST', `/api/queues/${curQ}/start`); };
+$('#qStopNow').onclick = () => api('POST', `/api/queues/${curQ}/stop`);
+$('#qClose').onclick = () => $('#dSched').close();
+
+// ---- grabber ----
+let grabId = null, gFiles = [], gProject = null;
+const BUILTIN_TPL = { custom: {}, images: { exts: 'jpg,jpeg,png,gif,bmp,webp,svg', lv: 2 }, video: { exts: 'mp4,mkv,avi,mov,wmv,flv,webm,mpg', lv: 2 }, audio: { exts: 'mp3,wav,flac,aac,ogg,m4a,wma', lv: 2 }, documents: { exts: 'pdf,doc,docx,xls,xlsx,ppt,pptx,txt,epub', lv: 2 }, archives: { exts: 'zip,rar,7z,gz,tar,iso', lv: 2 }, website: { exts: 'css,js,jpg,jpeg,png,gif,svg,webp,ico,woff,woff2,ttf', lv: 3, mirror: true } };
+const split = (v, sep = /[;,]/) => v.split(sep).map(x => x.trim()).filter(Boolean);
+function grabOpts() {
+  const whole = $('#gWhole').checked;
+  const o = { startUrl: $('#gUrl').value.trim(), template: BUILTIN_TPL[$('#gTpl').value] ? $('#gTpl').value : 'custom', levelsThis: whole ? 99 : +$('#gLv').value, levelsOther: +$('#gLvO').value,
+    exts: split($('#gExt').value), excludePaths: split($('#gExc').value), includePaths: split($('#gIncPath').value), logoutPages: split($('#gLogout').value), noParent: $('#gNoParent').checked, exploreSubdomains: $('#gSub').checked,
+    sameSiteOnly: $('#gSame').checked, minSize: +$('#gMin').value * 1048576, maxSize: +$('#gMax').value * 1048576, hideDuplicates: $('#gDup').checked, scanScripts: $('#gJs').checked,
+    savePages: $('#gMirror').checked, overwrite: $('#gOver').checked, cookie: $('#gCookie').value.trim(), exploreConcurrent: Math.max(1, Math.min(10, +$('#gConc').value || 4)), maxPages: whole ? 2000 : 300 };
+  if ($('#gAuth').checked) { o.username = $('#gUser').value; o.password = $('#gPass').value; }
+  return o;
+}
+function fillGrab(o = {}) {
+  $('#gUrl').value = o.startUrl || ''; $('#gLv').value = o.levelsThis > 10 ? 2 : (o.levelsThis ?? 2); $('#gLvO').value = o.levelsOther ?? 0; $('#gWhole').checked = o.levelsThis > 10; $('#gLevels').checked = !(o.levelsThis > 10);
+  $('#gExt').value = (o.exts || []).join(','); $('#gExc').value = (o.excludePaths || []).join('; '); $('#gIncPath').value = (o.includePaths || []).join('; '); $('#gLogout').value = (o.logoutPages || []).join('; ');
+  $('#gNoParent').checked = !!o.noParent; $('#gSub').checked = !!o.exploreSubdomains; $('#gSame').checked = o.sameSiteOnly !== false; $('#gMin').value = o.minSize ? o.minSize / 1048576 : ''; $('#gMax').value = o.maxSize ? o.maxSize / 1048576 : '';
+  $('#gDup').checked = !!o.hideDuplicates; $('#gJs').checked = o.scanScripts !== false; $('#gMirror').checked = !!o.savePages; $('#gOver').checked = !!o.overwrite; $('#gCookie').value = o.cookie || ''; $('#gConc').value = o.exploreConcurrent || 4;
+  $('#gAuth').checked = !!o.username; $('#gUser').value = o.username || ''; $('#gPass').value = o.password || '';
+}
+function fillTemplates() {
+  $('#gTpl').innerHTML = Object.keys(BUILTIN_TPL).map(x => `<option value="${x}">${x}</option>`).join('') + (S.settings.grabberTemplates || []).map((t, i) => `<option value="user:${i}">★ ${esc(t.name)}</option>`).join('');
+  $('#gFilter').innerHTML = '<option value="">Add filter…</option>' + (S.settings.grabberFilters || []).map((f, i) => `<option value="${i}">${esc(f.name)} (${esc(f.mask)})</option>`).join('');
+}
+function openGrab(p) {
+  fillTemplates(); gProject = p || null; $('#gName').value = p ? p.name : ''; fillGrab(p ? p.opts : {}); $('#gFiles').innerHTML = ''; $('#gStat').textContent = ''; grabId = null; $('#dGrab').showModal();
+}
+$('#gTpl').onchange = () => {
+  const v = $('#gTpl').value;
+  if (v.startsWith('user:')) fillGrab({ ...S.settings.grabberTemplates[+v.slice(5)].opts, startUrl: $('#gUrl').value });
+  else { const t = BUILTIN_TPL[v]; $('#gExt').value = t.exts || ''; $('#gLv').value = t.lv ?? 2; $('#gMirror').checked = !!t.mirror; }
+};
+$('#gFilter').onchange = () => { const f = S.settings.grabberFilters[+$('#gFilter').value]; if (f) $('#gExt').value = [$('#gExt').value, f.mask].filter(Boolean).join(','); $('#gFilter').value = ''; };
+$('#gSaveTpl').onclick = async () => { const name = await uiPrompt('Please enter a name for the grabber template'); if (!name) return; const s = { ...S.settings, grabberTemplates: [...(S.settings.grabberTemplates || []), { name, opts: { ...grabOpts(), startUrl: '' } }] }; await api('PUT', '/api/settings', s); toast('Template saved'); setTimeout(fillTemplates, 400); };
+$('#bGrab').onclick = () => openGrab();
+$('#gClose').onclick = () => { if (grabId) api('POST', `/api/grabber/${grabId}/stop`); $('#dGrab').close(); };
+$('#gStop').onclick = () => grabId && api('POST', `/api/grabber/${grabId}/stop`);
+$('#gGo').onclick = async () => { $('#gFiles').innerHTML = ''; const r = await api('POST', '/api/grabber', grabOpts()); grabId = r.id; $('#gStat').textContent = 'Exploring…'; };
+async function loadGrab() { const j = await api('GET', '/api/grabber/' + grabId); gFiles = j.files; $('#gFiles').innerHTML = gFiles.map((f, i) => `<tr><td style="width:24px"><input type="checkbox" data-i="${i}" checked></td><td title="${esc(f.url)}">${esc(f.name)}</td><td class="hint">${f.size != null ? fmtB(f.size) : ''}</td></tr>`).join(''); }
+$('#gCheckAll').onclick = () => document.querySelectorAll('#gFiles input').forEach(i => i.checked = !i.checked);
+const checkedIdx = () => [...document.querySelectorAll('#gFiles input:checked')].map(i => +i.dataset.i);
+$('#gAdd').onclick = async () => {
+  if (!grabId || !checkedIdx().length) return;
+  const r = await api('POST', `/api/grabber/${grabId}/add`, { indexes: checkedIdx(), queue: 'main' });
+  toast(`${r.added} file(s) added to the queue` + (r.pagesConverted ? `; ${r.pagesConverted} pages converted for offline browsing` : '')); $('#dGrab').close();
+};
+async function saveProject(schedule) {
+  const proj = { id: gProject?.id, name: $('#gName').value.trim() || $('#gUrl').value.trim(), opts: grabOpts(), checked: grabId ? checkedIdx().map(i => gFiles[i].url) : (gProject?.checked || []), schedule: schedule || gProject?.schedule || { enabled: false } };
+  gProject = await api('POST', '/api/projects', proj); toast('Project saved');
+}
+$('#gSaveProj').onclick = () => saveProject();
+$('#gSched').onclick = () => {
+  const sc = gProject?.schedule || {}; const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  modal('Schedule the grabber project', `
+    <div class="row chk"><input type="checkbox" id="pe" ${sc.enabled ? 'checked' : ''}><label for="pe">Enable (Advance Download Manager must be running at that time)</label></div>
+    <div class="row"><label>Step 1. Type</label><select id="pt"><option value="once" ${sc.type !== 'periodic' ? 'selected' : ''}>One-time exploring/downloading</option><option value="periodic" ${sc.type === 'periodic' ? 'selected' : ''}>Periodic synchronization</option></select></div>
+    <div class="row"><label>Step 2. Action</label><select id="pa">${[['explore', 'Explore only'], ['explore-download', 'Explore site and download matched files'], ['download-checked', 'Download checked files']].map(([v, t]) => `<option value="${v}" ${sc.action === v ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
+    <div class="row"><label>Step 3. Start at / stop at</label><span style="display:flex;gap:6px"><input id="ps" type="time" value="${sc.startAt || ''}"><input id="pq" type="time" value="${sc.stopAt || ''}"></span></div>
+    <div class="row"><label>Start again every (min)</label><input id="pm" type="number" min="0" value="${sc.everyMinutes || 0}"></div>
+    <div class="row"><label>Days</label><span>${days.map((d, i) => `<label><input type="checkbox" class="pd" value="${i}" ${(sc.days || [0, 1, 2, 3, 4, 5, 6]).includes(i) ? 'checked' : ''}> ${d}</label> `).join('')}</span></div>
+    <div class="row chk"><input type="checkbox" id="px1" ${sc.onDone?.exit ? 'checked' : ''}><label for="px1">Exit Advance Download Manager when done</label></div>
+    <div class="row chk"><input type="checkbox" id="px2" ${sc.onDone?.shutdown ? 'checked' : ''}><label for="px2">Turn off computer when done</label></div>`,
+    [{ label: 'Cancel' }, { label: 'OK', primary: true, fn: async d => {
+      const v = id => d.querySelector(id);
+      await saveProject({ enabled: v('#pe').checked, type: v('#pt').value, action: v('#pa').value, startAt: v('#ps').value, stopAt: v('#pq').value, everyMinutes: +v('#pm').value || 0,
+        days: [...d.querySelectorAll('.pd')].filter(x => x.checked).map(x => +x.value), onDone: { exit: v('#px1').checked, shutdown: v('#px2').checked } });
+    } }]);
+};
+
+// ---- menu bar (Tasks / File / Downloads / View / Help) ----
+const MENUS = {
+  Tasks: [['Add new download', () => openAdd()], ['Download video from a page address…', () => videoPageDialog()], ['Add batch download…', () => batchDialog()], ['Add batch download from clipboard…', async () => { let t = ''; try { t = await navigator.clipboard.readText(); } catch { /* denied */ } batchDialog(t.trim()); }], ['Run site grabber', () => openGrab()], '-', ['Export…', exportDialog], ['Import…', importDialog], '-', ['Exit (stop all downloads)', () => api('POST', '/api/stop-all')]],
+  File: [['Stop download', () => each(id => api('POST', `/api/downloads/${id}/stop`))], ['Remove', () => deleteSelected()], ['Download now', () => each(id => api('POST', `/api/downloads/${id}/start`))], ['Redownload', () => each(id => api('POST', `/api/downloads/${id}/redownload`))]],
+  Downloads: [['Pause / stop all', () => api('POST', '/api/stop-all')], ['Turbo mode (on / off)', () => toggleTurbo()], '-', ['Delete all completed', () => $('#bDelDone').click()], '-', ['Find… (Ctrl-F)', () => { $('#findbar').classList.add('on'); $('#fText').focus(); }], ['Find next (F3)', findNext], '-', ['Scheduler', () => $('#bSched').click()], ['Start queue', () => $('#bQStart').click()], ['Stop queue', () => $('#bQStop').click()], '-', ['Speed Limiter on', () => limiter(true)], ['Speed Limiter off', () => limiter(false)], ['Speed Limiter settings…', () => { openOptions(); }], '-', ['Options', openOptions]],
+  View: [['Columns…', columnsDialog], ['Toolbar › Customize…', toolbarDialog], ['Toolbar › Large buttons', () => setTb({ mode: 'large' })], ['Toolbar › Small buttons', () => setTb({ mode: 'small' })], ['Skin › Neon', () => setTb({ skin: 'neon' })], ['Skin › Default', () => setTb({ skin: 'default' })], ['Font…', fontDialog], ['Reset to default font', resetFont], ['Arrange files: click a column header', () => toast('Click a column header to sort; click again to reverse')], ['Toggle categories pane', () => { const s = $('#side'); s.style.display = s.style.display === 'none' ? '' : 'none'; }]],
+  Help: [['Check for updates…', () => checkUpdate(true)], ['About Advance Download Manager', () => modal('About Advance Download Manager', '<div><b>Advance Download Manager</b> ' + esc(APP_VERSION) + '</div><div>Free and open source (MIT).</div><div class="hint">Created by @kaushalsah606 · github.com/kaushalsah606/ADM---Advance-Download-Manager-</div>')]],
+};
+async function limiter(on) { await api('PUT', '/api/settings', { ...S.settings, limiterOn: on }); toast('Speed Limiter ' + (on ? 'on' : 'off')); }
+$('#menubar').innerHTML = Object.keys(MENUS).map(k => `<div><button>${k}</button><div class="menu">${MENUS[k].map((m, i) => m === '-' ? '<hr>' : `<button data-m="${k}:${i}">${esc(m[0])}</button>`).join('')}</div></div>`).join('');
+$('#menubar').onclick = e => { const b = e.target.closest('button[data-m]'); if (!b) return; const [k, i] = b.dataset.m.split(':'); document.activeElement.blur(); MENUS[k][+i][1](); };
+
+// ---- drag & drop links / clipboard monitor ----
+document.addEventListener('dragover', e => e.preventDefault());
+document.addEventListener('drop', async e => {
+  e.preventDefault();
+  const text = e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain');
+  const urls = (text.match(/\b(?:https?|ftp):\/\/[^\s"'<>]+/gi) || []);
+  if (urls.length) { const r = await api('POST', '/api/downloads', { urls, startNow: false, queue: 'main' }); toast(`${urls.length} link(s) dropped into the queue`); notifyDup(r); }
+});
+let lastClip = '';
+window.addEventListener('focus', async () => {
+  if (!S.settings.clipboardMonitor || window.chrome?.webview) return;
+  try {
+    const t = (await navigator.clipboard.readText()).trim();
+    if (t === lastClip || !/^(https?|ftp):\/\/\S+$/i.test(t)) return; lastClip = t;
+    const ext = (new URL(t).pathname.split('.').pop() || '').toLowerCase();
+    if ((S.settings.fileTypes || []).includes(ext)) { await api('POST', '/api/downloads', { url: t, startNow: true, queue: null }); toast('Started downloading the link from the clipboard'); }
+  } catch { /* clipboard unavailable */ }
+});
+
+// ---- toolbar customization, skins ----
+const TB_ICONS = { bAdd: '➕', bStart: '▶', bStop: '⏹', bStopAll: '⛔', bDelete: '🗑', bDelDone: '🧹', bOpts: '⚙', bSched: '⏰', bQStart: '⏩', bQStop: '⏸', bGrab: '🕷', bTurbo: '⚡' };
+const TB_LABELS = {};
+document.querySelectorAll('#toolbar button').forEach(b => {
+  TB_LABELS[b.id] = b.textContent; b.title = b.textContent;
+  b.innerHTML = `<span class="i">${TB_ICONS[b.id] || ''}</span> <span class="t">${esc(b.textContent)}</span>`;
+});
+let tb = Object.assign({ hidden: [], mode: 'large', skin: 'default' }, store.get('toolbar', {}));
+function applyToolbar() {
+  document.querySelectorAll('#toolbar button').forEach(b => { b.style.display = tb.hidden.includes(b.id) ? 'none' : ''; });
+  document.body.classList.toggle('tb-small', tb.mode === 'small');
+  document.body.classList.toggle('tb-text', tb.mode === 'text');
+  document.body.classList.toggle('neon', tb.skin === 'neon');
+}
+function setTb(patch) { tb = { ...tb, ...patch }; store.set('toolbar', tb); applyToolbar(); }
+function toolbarDialog() {
+  const ids = Object.keys(TB_LABELS);
+  modal('Customize toolbar', ids.map(id => `<label><input type="checkbox" data-id="${id}" ${tb.hidden.includes(id) ? '' : 'checked'}> ${esc(TB_ICONS[id] || '')} ${esc(TB_LABELS[id])}</label>`).join('') +
+    `<div class="row"><label>Buttons</label><select id="tbMode"><option value="large" ${tb.mode === 'large' ? 'selected' : ''}>Large (icon + text)</option><option value="small" ${tb.mode === 'small' ? 'selected' : ''}>Small (icons only)</option><option value="text" ${tb.mode === 'text' ? 'selected' : ''}>Text only</option></select></div>
+     <div class="row"><label>Skin</label><select id="tbSkin"><option value="default" ${tb.skin === 'default' ? 'selected' : ''}>Default</option><option value="neon" ${tb.skin === 'neon' ? 'selected' : ''}>Neon</option></select></div>`,
+    [{ label: 'Reset', fn: () => setTb({ hidden: [], mode: 'large', skin: 'default' }) },
+     { label: 'OK', primary: true, fn: d => setTb({ hidden: ids.filter(id => !d.querySelector(`[data-id="${id}"]`).checked), mode: d.querySelector('#tbMode').value, skin: d.querySelector('#tbSkin').value }) }]);
+}
+applyToolbar();
+
+// ---- font ----
+function applyFont() { const f = store.get('font', null); document.body.style.fontFamily = f ? f.family : ''; document.body.style.fontSize = f ? f.size + 'px' : ''; }
+function fontDialog() {
+  const f = store.get('font', null) || { family: 'system-ui', size: 13 };
+  modal('Font', `<div class="row"><label>Family</label><select id="fFam">${['system-ui', 'Segoe UI', 'Arial', 'Verdana', 'Georgia', 'Consolas', 'monospace'].map(x => `<option ${x === f.family ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
+    <div class="row"><label>Size (px)</label><input id="fSz" type="number" min="9" max="24" value="${f.size}"></div>`,
+    [{ label: 'Cancel' }, { label: 'OK', primary: true, fn: d => { store.set('font', { family: d.querySelector('#fFam').value, size: +d.querySelector('#fSz').value || 13 }); applyFont(); } }]);
+}
+function resetFont() { store.set('font', null); applyFont(); toast('Default font restored'); }
+applyFont();
+
+setTimeout(() => { if (S?.settings?.updates?.check !== false) checkUpdate(false); }, 6000);
+
+// ---- columns dialog with reordering ----
+function columnsDialog() {
+  let order = [...cols, ...COLS.map(c => c.id).filter(id => !cols.includes(id))];
+  const on = new Set(cols);
+  const dlg = document.createElement('dialog');
+  dlg.innerHTML = `<div class="box"><h3>Columns</h3><div class="hint">Check the columns you want visible; use Move up / Move down to reorder them.</div><div id="colList" style="display:grid;gap:4px"></div>
+    <div class="foot"><button id="colReset">Reset</button><button id="colCancel">Cancel</button><button class="primary" id="colOk">OK</button></div></div>`;
+  const paint = () => {
+    dlg.querySelector('#colList').innerHTML = order.map((id, i) => `<div style="display:flex;gap:6px;align-items:center"><label style="flex:1"><input type="checkbox" data-c="${id}" ${on.has(id) ? 'checked' : ''}> ${esc(COLS.find(x => x.id === id).label)}</label><button data-mv="${i}" data-dir="-1">Move up</button><button data-mv="${i}" data-dir="1">Move down</button></div>`).join('');
+  };
+  dlg.addEventListener('click', e => {
+    const b = e.target.closest('[data-mv]'); if (!b) return;
+    const i = +b.dataset.mv, j = i + +b.dataset.dir; if (j < 0 || j >= order.length) return;
+    [order[i], order[j]] = [order[j], order[i]]; paint();
+  });
+  dlg.addEventListener('change', e => { const c = e.target.dataset.c; if (c) (e.target.checked ? on.add(c) : on.delete(c)); });
+  dlg.querySelector('#colReset').onclick = () => { cols = ['name', 'q', 'size', 'progress', 'status', 'speed', 'eta', 'added']; store.set('cols', cols); dlg.close(); renderAll(); };
+  dlg.querySelector('#colCancel').onclick = () => dlg.close();
+  dlg.querySelector('#colOk').onclick = () => { cols = order.filter(id => on.has(id)); if (!cols.length) cols = ['name']; store.set('cols', cols); dlg.close(); renderAll(); };
+  dlg.addEventListener('close', () => dlg.remove());
+  $('#dyn').append(dlg); paint(); dlg.showModal();
+}
+
+// ---- interactive login (401) prompt ----
+const askedAuth = new Set();
+function maybeAskAuth(d) {
+  if (d.status !== 'error' || d.authRealm == null || askedAuth.has(d.id + d.error)) return;
+  askedAuth.add(d.id + d.error);
+  let host = ''; try { host = new URL(d.url).hostname; } catch { /* keep empty */ }
+  modal('Connecting to the site', `<div>${esc(host)} requires a user name and password.</div><div class="hint">Realm: ${esc(d.authRealm || '(none)')}</div>
+    <div class="row"><label>User name</label><input id="auU"></div><div class="row"><label>Password</label><input id="auP" type="password"></div>
+    <label><input type="checkbox" id="auS" checked> Save this password in the Site Logins list</label>`,
+    [{ label: 'Cancel' }, { label: 'OK', primary: true, fn: async dlg => {
+      const user = dlg.querySelector('#auU').value, pass = dlg.querySelector('#auP').value;
+      if (!user) return false;
+      await api('PATCH', `/api/downloads/${d.id}`, { username: user, password: pass });
+      if (dlg.querySelector('#auS').checked) await api('PUT', '/api/settings', { ...S.settings, siteLogins: [...(S.settings.siteLogins || []), { pattern: host, user, pass }] });
+      await api('POST', `/api/downloads/${d.id}/start`);
+    } }]);
+}
+
+// ---- scheduler "Shut down" countdown ----
+es.addEventListener('shutdown-pending', e => {
+  const { seconds } = JSON.parse(e.data); let left = seconds;
+  const dlg = document.createElement('dialog');
+  dlg.innerHTML = `<div class="box"><h3>Shut down</h3><div>Advance Download Manager has finished queue processing. According to the scheduler settings your computer is shutting down in <b id="sdLeft">${left}</b> s.</div>
+    <div class="bar"><i id="sdBar" style="width:100%"></i></div><div class="foot"><button id="sdCancel">Cancel</button><button class="primary" id="sdNow">Shut down now</button></div></div>`;
+  $('#dyn').append(dlg); dlg.showModal();
+  const t = setInterval(() => { left--; dlg.querySelector('#sdLeft').textContent = Math.max(0, left); dlg.querySelector('#sdBar').style.width = Math.max(0, left) / seconds * 100 + '%'; if (left <= 0) dlg.close(); }, 1000);
+  dlg.addEventListener('close', () => { clearInterval(t); dlg.remove(); });
+  dlg.querySelector('#sdCancel').onclick = () => { api('POST', '/api/shutdown-cancel'); dlg.close(); toast('Shut down cancelled'); };
+  dlg.querySelector('#sdNow').onclick = () => { api('POST', '/api/shutdown-now'); dlg.close(); };
+});
+
+setInterval(() => { if ([...dl.values()].some(d => d.status === 'error' && d.retryAt > Date.now()) || S.quotaWaitUntil > Date.now()) { renderRows(); renderBanner(); } }, 1000);
+</script>
+</body>
+</html>

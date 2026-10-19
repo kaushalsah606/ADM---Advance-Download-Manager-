@@ -1,0 +1,9 @@
+node_modules/
+build/
+release/
+dist/
+*.pfx
+*.p12
+*.key
+.env
+.cache/

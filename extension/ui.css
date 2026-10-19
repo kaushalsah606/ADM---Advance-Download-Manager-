@@ -1,0 +1,58 @@
+/* Shared look of the extension's popup and options page. Light and dark follow the browser. */
+:root {
+  --bg: #f4f6fa; --card: #ffffff; --text: #16202e; --muted: #64748b; --line: #e2e8f0;
+  --brand: #1769e0; --brand-2: #0d47a1; --brand-soft: #e8f0fd; --ok: #15803d; --warn: #b45309; --bad: #c62828;
+  --switch-off: #cbd5e1; --shadow: 0 1px 2px rgba(15, 23, 42, .06), 0 4px 14px rgba(15, 23, 42, .06);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1623; --card: #172133; --text: #e6edf7; --muted: #94a3b8; --line: #26334a;
+    --brand: #4c8dff; --brand-2: #2f6fe0; --brand-soft: #16284a; --ok: #4ade80; --warn: #fbbf24; --bad: #f87171;
+    --switch-off: #3b4a63; --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 4px 14px rgba(0, 0, 0, .3);
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 13px/1.45 "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; }
+h1, h2, h3, p { margin: 0; }
+a { color: var(--brand); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.head { display: flex; align-items: center; gap: 10px; }
+.head img { width: 32px; height: 32px; border-radius: 8px; }
+.head .name { font-weight: 650; font-size: 14px; letter-spacing: .1px; }
+.head .sub { color: var(--muted); font-size: 11.5px; }
+.pill { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 600; background: var(--brand-soft); color: var(--brand); white-space: nowrap; }
+.pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.pill.ok { color: var(--ok); background: color-mix(in srgb, var(--ok) 14%, transparent); }
+.pill.warn { color: var(--warn); background: color-mix(in srgb, var(--warn) 14%, transparent); }
+.pill.bad { color: var(--bad); background: color-mix(in srgb, var(--bad) 13%, transparent); }
+
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); }
+.row { display: flex; align-items: center; gap: 12px; padding: 11px 14px; }
+.row + .row { border-top: 1px solid var(--line); }
+.row .t { flex: 1; min-width: 0; }
+.row .t b { display: block; font-weight: 600; }
+.row .t span { display: block; color: var(--muted); font-size: 11.5px; margin-top: 1px; }
+
+/* switch */
+.sw { position: relative; flex: none; width: 38px; height: 22px; }
+.sw input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; z-index: 1; }
+.sw i { position: absolute; inset: 0; border-radius: 999px; background: var(--switch-off); transition: background .15s; }
+.sw i::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .3); transition: transform .15s; }
+.sw input:checked + i { background: var(--brand); }
+.sw input:checked + i::after { transform: translateX(16px); }
+.sw input:focus-visible + i { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+/* buttons */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--line); background: var(--card); color: var(--text); border-radius: 9px; padding: 8px 14px; font: inherit; font-weight: 600; cursor: pointer; transition: background .12s, border-color .12s; }
+.btn:hover { background: var(--brand-soft); border-color: var(--brand); }
+.btn.primary { background: linear-gradient(135deg, var(--brand), var(--brand-2)); border-color: transparent; color: #fff; }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.block { width: 100%; }
+.btn.small { padding: 4px 10px; font-size: 12px; border-radius: 7px; }
+.btn:disabled { opacity: .55; cursor: default; }
+.btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+
+.muted { color: var(--muted); }
+input[type=text], input[type=number], textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--text); font: inherit; }
+input:focus, textarea:focus { outline: 2px solid var(--brand); outline-offset: 0; border-color: transparent; }
